@@ -67,7 +67,7 @@
       <div class="fiche-mot jp">${motHTML(m, true)}</div>
       <div class="fiche-lect jp ${typeMisEnAvant === "lecture" ? "fort" : ""}">${esc(m.kana)}</div>
       <div class="fiche-sens ${typeMisEnAvant === "sens" ? "fort" : ""}">${esc(maj(m.fr))}</div>
-      <div class="fiche-info">Mot ${m.phase === "combo" ? "(kanji tous à connaître)" : "(furigana sur les kanji hors liste)"}${m.special ? " · lecture particulière" : ""}</div>
+      <div class="fiche-info">Mot ${m.phase === "combo" ? "de vocabulaire niveau 1 (kanji tous à connaître)" : "de vocabulaire niveau 2 (furigana sur les kanji hors liste)"}${m.special ? " · lecture particulière" : ""}</div>
       <ul class="fiche-ex">${comp}</ul></div>`;
   }
   function onglets(actif) { document.querySelectorAll("nav button").forEach((b) => b.classList.toggle("actif", b.dataset.vue === actif)); }
@@ -334,11 +334,11 @@
     if (dues.length) sous = `${dues.length} révision${dues.length > 1 ? "s" : ""} en attente`;
     else if (pr.carte) sous = "Nouvelles cartes disponibles";
     else { const p = L.prochaineRevision(etat); sous = p ? `Prochaine révision ${duree(p - t)}` : "Rien à faire"; }
-    const phases = { kanji: "kanji seuls", combo: "mots à kanji connus", mixte: "mots avec furigana", fini: "tout est vu" };
+    const phases = { kanji: "kanji seuls", combo: "vocabulaire niveau 1", mixte: "vocabulaire niveau 2", fini: "tout est vu" };
     const vuesKanji = CARTES.filter((c) => c.phase === "kanji" && L.introduite(etat, c.id)).length;
     const dem = prev[1];
     ecran.innerHTML = `
-      <h1><img class="logo-mini" src="icone-192.png" alt="">Kanji JLPT <span class="sous">N5 · N4</span></h1>
+      <h1><img class="logo-mini" src="dragon-192.png" alt="">Kanji JLPT <span class="sous">N5 · N4</span></h1>
       <button class="gros jouer" id="b-jouer">▶ Jouer<span>${sous}</span></button>
       <div class="carte-info">
         <div class="demain">Demain : <b>${Math.round(dem.revisions)} révision${Math.round(dem.revisions) > 1 ? "s" : ""}</b>, environ <b>${dem.revisions < 0.5 ? 0 : Math.max(1, Math.round(dem.minutes))} min</b></div>
@@ -390,7 +390,7 @@
     onglets("progres");
     const familles = [["Kanji N5", (c) => c.phase === "kanji" && PAR_KANJI[c.id.split(":")[1]].niveau === "N5"],
       ["Kanji N4", (c) => c.phase === "kanji" && PAR_KANJI[c.id.split(":")[1]].niveau === "N4"],
-      ["Mots à kanji connus", (c) => c.phase === "combo"], ["Mots avec furigana", (c) => c.phase === "mixte"]];
+      ["Vocabulaire niveau 1", (c) => c.phase === "combo"], ["Vocabulaire niveau 2", (c) => c.phase === "mixte"]];
     const barres = familles.map(([nom, fn]) => {
       const ids = CARTES.filter(fn).map((c) => c.id);
       const cpt = {}; for (const id of ids) { const g = groupe(etat.tuiles[id]); cpt[g] = (cpt[g] || 0) + 1; }
@@ -434,7 +434,7 @@
       <label class="second fichier">Restaurer une sauvegarde<input type="file" id="f-rest" accept=".json,application/json"></label>
       <button class="second danger" id="b-raz">Tout effacer et recommencer</button>
       <h2>Règles</h2>
-      <p class="aide">Ordre : les 245 kanji seuls, puis les mots dont tous les kanji sont à connaître, puis les mots avec furigana sur les kanji hors liste ; un mot arrive quand ses kanji sont au palier Confirmé 1.
+      <p class="aide">Ordre : les 245 kanji seuls, puis le vocabulaire niveau 1 (mots dont tous les kanji sont à connaître), puis le vocabulaire niveau 2 (furigana sur les kanji hors liste) ; un mot arrive quand ses kanji sont au palier Confirmé 1.
       Paliers : Apprenti 1 à 4 (4 h, 8 h, 1 j, 2 j), Confirmé 1 et 2 (1 et 2 semaines), Maîtrisé (1 mois), Expert (4 mois), Chrono 30 s, Chrono 12 s (1 mois chacun), Acquis.
       Erreur : -2 paliers (-1 aux paliers chrono). Absence très longue : -1 palier. Une pause de plus de 30 s sur une question ne compte pas dans ton temps.</p>
       <h2>Sources</h2>
