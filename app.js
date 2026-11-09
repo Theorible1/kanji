@@ -151,9 +151,63 @@
     etat.profil.jours[j] = Math.round(((etat.profil.jours[j] || 0) + sec) * 10) / 10;
   }
 
+
+  // ---------- feu d'artifice (révisions du jour terminées) ----------
+  function feuDArtifice(ensuite) {
+    const c = document.createElement("canvas");
+    c.className = "feu";
+    const msg = document.createElement("div");
+    msg.className = "feu-msg";
+    msg.innerHTML = "Révisions du jour terminées !<span>Touche l'écran pour continuer</span>";
+    document.body.append(c, msg);
+    const ctx = c.getContext("2d");
+    const dpr = window.devicePixelRatio || 1;
+    const W = c.width = innerWidth * dpr, Hh = c.height = innerHeight * dpr;
+    const couleurs = ["#7ea3c4", "#a8c4dc", "#d9b25f", "#ecd08c", "#7fb98a", "#d47f6f", "#e6dfcc"];
+    const fusees = [], eclats = [];
+    let t0 = performance.now(), fini = false, dernier = 0;
+    const lancer = () => fusees.push({ x: W * (0.15 + Math.random() * 0.7), y: Hh, vx: (Math.random() - .5) * 2 * dpr,
+      vy: -(Hh / 60) * (0.75 + Math.random() * 0.25), cible: Hh * (0.15 + Math.random() * 0.35), c: couleurs[Math.floor(Math.random() * couleurs.length)] });
+    const exploser = (f) => {
+      const n = 70 + Math.floor(Math.random() * 40);
+      for (let i = 0; i < n; i++) {
+        const a = (i / n) * Math.PI * 2, v = (2 + Math.random() * 4) * dpr;
+        eclats.push({ x: f.x, y: f.y, vx: Math.cos(a) * v, vy: Math.sin(a) * v, vie: 1, c: Math.random() < .2 ? "#e6dfcc" : f.c });
+      }
+    };
+    const fin = () => { if (fini) return; fini = true; c.remove(); msg.remove(); ensuite(); };
+    c.onclick = msg.onclick = fin;
+    const image = (t) => {
+      if (fini) return;
+      const ecoule = t - t0;
+      if (ecoule < 3200 && t - dernier > 280) { lancer(); if (Math.random() < .5) lancer(); dernier = t; }
+      ctx.globalCompositeOperation = "destination-out";
+      ctx.fillStyle = "rgba(0,0,0,.22)"; ctx.fillRect(0, 0, W, Hh);
+      ctx.globalCompositeOperation = "lighter";
+      for (let i = fusees.length - 1; i >= 0; i--) {
+        const f = fusees[i];
+        f.x += f.vx; f.y += f.vy; f.vy += 0.12 * dpr;
+        ctx.fillStyle = f.c; ctx.fillRect(f.x - dpr, f.y - 3 * dpr, 2 * dpr, 6 * dpr);
+        if (f.y <= f.cible || f.vy >= 0) { exploser(f); fusees.splice(i, 1); }
+      }
+      for (let i = eclats.length - 1; i >= 0; i--) {
+        const e = eclats[i];
+        e.x += e.vx; e.y += e.vy; e.vy += 0.06 * dpr; e.vx *= .985; e.vy *= .985; e.vie -= .011;
+        if (e.vie <= 0) { eclats.splice(i, 1); continue; }
+        ctx.globalAlpha = Math.max(0, e.vie); ctx.fillStyle = e.c;
+        ctx.beginPath(); ctx.arc(e.x, e.y, 1.8 * dpr, 0, Math.PI * 2); ctx.fill();
+      }
+      ctx.globalAlpha = 1;
+      if (ecoule > 4300 && !fusees.length) return fin();
+      requestAnimationFrame(image);
+    };
+    requestAnimationFrame(image);
+    window.__feu = { fin };   // tests
+  }
+
   // ---------- JOUER : révisions dues, puis nouvelles cartes dosées ----------
   function jouer() {
-    const session = { rattrapage: [], depuis: 0, forcer: false, faites: 0, nouvelles: 0 };
+    const session = { rattrapage: [], depuis: 0, forcer: false, faites: 0, nouvelles: 0, fete: false };
     const nomCarte = (id) => { const x = info(id); return `${x.genre === "k" ? "Kanji" : "Mot"} · ${x.type}`; };
     const suivante = () => {
       const t = maintenant();
@@ -161,7 +215,8 @@
       const dues = L.revisionsDues(etat, t).filter((id) => !session.rattrapage.includes(id));
       if (session.rattrapage.length && (session.depuis >= 3 || !dues.length)) return rattraper(session.rattrapage.shift());
       if (dues.length) return reviser(dues[0], dues.length);
-      // plus de révision : nouvelle carte si le budget des 5 prochains jours le permet
+      // plus de révision : feu d'artifice si on vient de les finir, puis nouvelle carte si le budget le permet
+      if (session.faites > 0 && !session.fete) { session.fete = true; return feuDArtifice(suivante); }
       const prochaine = L.prochaineNouvelle(etat, CARTES);
       if (!prochaine.carte) return finJeu(prochaine);
       if (!session.forcer) {
@@ -283,7 +338,7 @@
     const vuesKanji = CARTES.filter((c) => c.phase === "kanji" && L.introduite(etat, c.id)).length;
     const dem = prev[1];
     ecran.innerHTML = `
-      <h1>Kanji JLPT <span class="sous">N5 · N4</span></h1>
+      <h1><img class="logo-mini" src="icone-192.png" alt="">Kanji JLPT <span class="sous">N5 · N4</span></h1>
       <button class="gros jouer" id="b-jouer">▶ Jouer<span>${sous}</span></button>
       <div class="carte-info">
         <div class="demain">Demain : <b>${Math.round(dem.revisions)} révision${Math.round(dem.revisions) > 1 ? "s" : ""}</b>, environ <b>${dem.revisions < 0.5 ? 0 : Math.max(1, Math.round(dem.minutes))} min</b></div>
