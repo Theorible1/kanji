@@ -428,6 +428,10 @@
       <p class="aide">Bonnes réponses en révision : <b>${Math.round(L.tauxReussite(etat) * 100)} %</b> ${n < 30 ? `(estimation de départ à 50 %, ${n} réponse(s) mesurée(s))` : `(sur tes ${Math.min(n, 200)} dernières réponses)`}<br>
       Temps moyen par carte : <b>${Math.round(L.secondesParCarte(etat))} s</b><br>
       Temps réellement tenu sur 7 jours : <b>${b.tenu === null ? "pas encore assez de recul" : Math.round(b.tenu) + " min/jour"}</b></p>
+      <h2>Installer sur le téléphone</h2>
+      ${installee() ? `<p class="aide">L'appli est installée : ouvre-la depuis son icône sur l'écran d'accueil.</p>` : `
+      <button class="second" id="b-inst">Installer sur le téléphone</button>
+      <p class="aide" id="p-inst">${invitation ? "Un appui, puis « Installer »." : aideInstallation()}</p>`}
       <h2>Sauvegarde</h2>
       <p class="aide">Ta progression est enregistrée sur ce téléphone. Fais une sauvegarde de temps en temps (fichier dans Téléchargements).</p>
       <button class="second" id="b-sauv">Sauvegarder ma progression</button>
@@ -439,7 +443,12 @@
       Erreur : -2 paliers (-1 aux paliers chrono). Absence très longue : -1 palier. Une pause de plus de 30 s sur une question ne compte pas dans ton temps.</p>
       <h2>Sources</h2>
       <p class="aide">Kanji, lectures : KANJIDIC2 (EDRDG, licence CC BY-SA 4.0). Listes N5/N4 : tanos.co.uk (J. Waller, CC BY) et ebooks Kanpai. Listes non officielles (pas de liste officielle depuis 2010).</p>`;
-    $("#s-obj").onchange = (e) => { etat.reglages.objectif = +e.target.value; sauver(); alerte(`Objectif : ${e.target.value} min par jour`); };
+    if ($("#b-inst")) $("#b-inst").onclick = () => {
+      if (!invitation) { $("#p-inst").innerHTML = aideInstallation(); alerte("Suis les étapes juste en dessous."); return; }
+      invitation.prompt();
+      invitation.userChoice.then((c) => { invitation = null; if (c.outcome === "accepted") alerte("Installation en cours…"); vueOptions(); });
+    };
+    $("#s-obj").onchange =(e) => { etat.reglages.objectif = +e.target.value; sauver(); alerte(`Objectif : ${e.target.value} min par jour`); };
     $("#b-sauv").onclick = () => {
       const blob = new Blob([JSON.stringify(etat)], { type: "application/json" });
       const a = document.createElement("a");
@@ -462,6 +471,20 @@
       if (!confirm("Vraiment ? C'est définitif (sauf si tu as une sauvegarde).")) return;
       etat = L.etatVide(); sauver(); accueil();
     };
+  }
+
+  // ---------- installation (PWA) ----------
+  let invitation = null;                       // fournie par Chrome quand l'appli est installable
+  window.addEventListener("beforeinstallprompt", (e) => { e.preventDefault(); invitation = e; });
+  window.addEventListener("appinstalled", () => { invitation = null; alerte("Appli installée : l'icône est sur ton écran d'accueil."); });
+  function installee() {
+    return matchMedia("(display-mode: standalone)").matches || navigator.standalone === true;
+  }
+  function aideInstallation() {
+    const chrome = /Chrome\//.test(navigator.userAgent) && !/HeyTap|OppoBrowser|RealmeBrowser|SamsungBrowser|EdgA|OPR\//.test(navigator.userAgent);
+    return (chrome ? "" : "<b>Ouvre d'abord ce lien dans Chrome</b> (le navigateur du téléphone ne sait pas toujours installer les applis web).<br>") +
+      "Dans Chrome : touche le menu <b>⋮</b> en haut à droite, puis <b>« Installer l'appli »</b> ou <b>« Ajouter à l'écran d'accueil »</b>, puis confirme.<br>" +
+      "Si rien ne s'affiche : recharge la page une fois, attends quelques secondes, puis réessaie.";
   }
 
   // ---------- navigation ----------

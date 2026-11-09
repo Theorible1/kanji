@@ -1,6 +1,8 @@
 {
   "name": "Kanji JLPT N5 N4",
   "short_name": "Kanji",
+  "id": "./index.html",
+  "description": "Apprendre les kanji JLPT N5 et N4 en répétition espacée",
   "start_url": "./index.html",
   "scope": "./",
   "display": "standalone",

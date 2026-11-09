@@ -1,6 +1,6 @@
 // Service worker : met l'appli en cache pour qu'elle marche hors connexion.
 // Changer VERSION à chaque mise à jour des fichiers pour forcer le rafraîchissement.
-const VERSION = "kanji-v4";
+const VERSION = "kanji-v5";
 const FICHIERS = ["./", "index.html", "style.css", "app.js", "srs.js", "data.js", "manifest.webmanifest", "dragon-192.png", "dragon-512.png", "logo.svg"];
 
 self.addEventListener("install", (e) => {
