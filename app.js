@@ -338,7 +338,7 @@
     const vuesKanji = CARTES.filter((c) => c.phase === "kanji" && L.introduite(etat, c.id)).length;
     const dem = prev[1];
     ecran.innerHTML = `
-      <h1><img class="logo-mini" src="dragon-192.png" alt="">Kanji JLPT <span class="sous">N5 · N4</span></h1>
+      <h1><img class="logo-mini" src="nihon-192.png" alt="">Kanji JLPT <span class="sous">N5 · N4</span></h1>
       <button class="gros jouer" id="b-jouer">▶ Jouer<span>${sous}</span></button>
       <div class="carte-info">
         <div class="demain">Demain : <b>${Math.round(dem.revisions)} révision${Math.round(dem.revisions) > 1 ? "s" : ""}</b>, environ <b>${dem.revisions < 0.5 ? 0 : Math.max(1, Math.round(dem.minutes))} min</b></div>
