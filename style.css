@@ -203,3 +203,12 @@ details.vraiment summary { color: var(--rouge-ink); }
 
 /* ---------- sélecteur de thème ---------- */
 .choix-theme { width: 100%; font: inherit; padding: 10px; border-radius: var(--rayon); background: var(--page); color: var(--texte); border: 1px solid var(--bord-fort); }
+
+/* ---------- bandeau « nouvelle version » ---------- */
+.bandeau-maj { position: fixed; left: 10px; right: 10px; bottom: calc(70px + env(safe-area-inset-bottom)); z-index: 15; display: flex; align-items: center; gap: 10px;
+  max-width: 500px; margin: 0 auto; padding: 10px 10px 10px 14px; background: var(--surface-2); color: var(--texte); border: 1px solid var(--accent);
+  border-radius: var(--rayon); box-shadow: 0 6px 24px rgba(0, 0, 0, .35); animation: ch-fondu .35s both; }
+.bandeau-maj span { flex: 1; font-size: .85rem; color: var(--texte-2); line-height: 1.35; }
+.bandeau-maj b { display: block; color: var(--texte); font-size: .92rem; }
+.bandeau-maj button { flex: none; padding: 10px 14px; border: 0; border-radius: var(--rayon); background: var(--accent); color: var(--page); font-weight: 700; }
+.version { font-family: var(--mono); color: var(--accent-ink); }

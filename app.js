@@ -581,6 +581,12 @@
         </div>
         <p class="aide">${n < 30 ? `Réussite : estimation de départ à 50 % (${n} réponse(s) mesurée(s)).` : `Réussite sur tes ${Math.min(n, 200)} dernières révisions.`} ${b.tenu === null ? "Temps tenu : calculé après 7 jours d'utilisation." : "Temps tenu : moyenne des 7 derniers jours."}</p>
       </section>
+      <section class="panneau">
+        <h2>Mise à jour</h2>
+        <p class="ligne-reglage">Version installée <b id="v-inst" class="version">…</b></p>
+        <button class="second" id="b-maj">Chercher une mise à jour</button>
+        <p class="aide">L'appli vérifie toute seule à chaque ouverture et te prévient quand une nouvelle version est prête.</p>
+      </section>
       ${installee() ? "" : `<section class="panneau">
         <h2>Installer sur le téléphone</h2>
         <button class="second" id="b-inst">Installer sur le téléphone</button>
@@ -625,6 +631,8 @@
       invitation.prompt();
       invitation.userChoice.then((c) => { invitation = null; if (c.outcome === "accepted") alerte("Installation en cours…"); vueOptions(); });
     };
+    versionInstallee().then((v) => { const el = $("#v-inst"); if (el) el.textContent = v || "inconnue"; });
+    $("#b-maj").onclick = () => { $("#b-maj").textContent = "Vérification…"; chercherMaj(true).then(() => { const b = $("#b-maj"); if (b) b.textContent = "Chercher une mise à jour"; }); };
     $("#s-theme").onchange = (e) => { etat.reglages.theme = e.target.value; sauver(); appliquerTheme(); alerte(`Thème : ${NOMS_THEMES[e.target.value]}`); };
     $("#s-obj").onchange =(e) => { etat.reglages.objectif = +e.target.value; sauver(); alerte(`Temps visé : ${e.target.value} min par jour`); };
     $("#b-sauv").onclick = () => {
@@ -673,5 +681,58 @@
   document.querySelectorAll("nav button").forEach((b) => b.onclick = () => { clearInterval(minuteur); VUES[b.dataset.vue](); });
   window.__app = { accueil, etat: () => etat, recharger: () => { charger(); appliquerTheme(); accueil(); }, CARTES };   // tests
   accueil();
-  if ("serviceWorker" in navigator && location.protocol.startsWith("http")) navigator.serviceWorker.register("sw.js").catch(() => {});
+  // ---------- mises à jour : la nouvelle version s'installe en fond, l'utilisateur redémarre quand il veut ----------
+  let enregistrement = null, majDemandee = false;
+  function bandeauMaj(w) {
+    if (document.querySelector(".bandeau-maj")) return;
+    const d = document.createElement("div");
+    d.className = "bandeau-maj";
+    d.innerHTML = `<span><b>Nouvelle version disponible</b>Redémarre l'appli pour l'avoir.</span><button id="b-redem">Redémarrer</button>`;
+    document.body.appendChild(d);
+    d.querySelector("#b-redem").onclick = () => {
+      majDemandee = true;
+      d.querySelector("#b-redem").textContent = "…";
+      const cible = w || (enregistrement && enregistrement.waiting);
+      if (cible) cible.postMessage({ type: "MAJ" });
+      setTimeout(() => location.reload(), 4000);   // filet de sécurité si le nouveau service worker tarde
+    };
+  }
+  window.__bandeauMaj = bandeauMaj;   // tests
+  function suivreInstallation(w) {
+    if (!w) return;
+    const verif = () => { if (w.state === "installed" && navigator.serviceWorker.controller) bandeauMaj(w); };
+    verif(); w.addEventListener("statechange", verif);
+  }
+  function versionInstallee() {
+    return new Promise((ok) => {
+      const c = navigator.serviceWorker && navigator.serviceWorker.controller;
+      if (!c) return ok(null);
+      const canal = new MessageChannel();
+      canal.port1.onmessage = (e) => ok(e.data);
+      c.postMessage({ type: "VERSION" }, [canal.port2]);
+      setTimeout(() => ok(null), 1500);
+    });
+  }
+  function chercherMaj(manuel) {
+    if (!enregistrement) { if (manuel) alerte("Vérification impossible ici (appli pas ouverte depuis internet)."); return Promise.resolve(); }
+    return enregistrement.update().then(() => {
+      if (!manuel) return;
+      if (enregistrement.waiting) { bandeauMaj(enregistrement.waiting); alerte("Mise à jour trouvée : touche « Redémarrer »."); }
+      else if (enregistrement.installing) alerte("Mise à jour trouvée : téléchargement en cours…");
+      else alerte("Tu as déjà la dernière version.");
+    }).catch(() => { if (manuel) alerte("Pas de connexion internet : réessaie plus tard."); });
+  }
+  if ("serviceWorker" in navigator && location.protocol.startsWith("http")) {
+    navigator.serviceWorker.register("sw.js").then((reg) => {
+      enregistrement = reg;
+      if (reg.waiting && navigator.serviceWorker.controller) bandeauMaj(reg.waiting);
+      reg.addEventListener("updatefound", () => suivreInstallation(reg.installing));
+    }).catch(() => {});
+    navigator.serviceWorker.addEventListener("controllerchange", () => { if (majDemandee) location.reload(); });
+    // vérification à chaque retour dans l'appli (au plus une fois toutes les 10 min)
+    let derniere = 0;
+    document.addEventListener("visibilitychange", () => {
+      if (!document.hidden && Date.now() - derniere > 600000) { derniere = Date.now(); chercherMaj(false); }
+    });
+  }
 })();
