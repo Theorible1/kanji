@@ -9,6 +9,10 @@
 <link rel="icon" href="nihon-192.png">
 <link rel="apple-touch-icon" href="nihon-192.png">
 <link rel="stylesheet" href="style.css">
+<link rel="stylesheet" href="themes.css">
+<script>/* thème appliqué avant l'affichage (pas de flash) */
+try { var t = localStorage.getItem("kanjiApp.theme"); if (t === "auto") t = matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+  if (t && t !== "futur-confort-ardoise") document.documentElement.setAttribute("data-theme", t); } catch (e) {}</script>
 </head>
 <body>
 <main id="ecran"></main>
@@ -18,6 +22,7 @@
   <button data-vue="acquis">🏆<span>Acquis</span></button>
   <button data-vue="options">⚙️<span>Options</span></button>
 </nav>
+<script src="themes.js"></script>
 <script src="data.js"></script>
 <script src="srs.js"></script>
 <script src="app.js"></script>

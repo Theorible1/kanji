@@ -1,0 +1,95 @@
+/* Généré par outils/faire_themes.py à partir du dashboard SUPERVISOR3000 : ne pas modifier à la main. */
+:root[data-theme="light"]{color-scheme:light;--page:#f6f6f3;--surface:#fcfcfb;--surface-2:#f1f0ec;--texte:#0b0b0b;--texte-2:#52514e;--doux:#898781;--grille:#e1e0d9;--axe:#c3c2b7;--bord:rgba(11,11,11,.10);--bord-fort:rgba(11,11,11,.18);--accent:#2a78d6;--accent-ink:#1c5cab;--accent-piste:#cde2fb;--vert:#0ca30c;--vert-ink:#006300;--orange:#fab219;--rouge:#d03b3b;--rouge-ink:#b02a2a;--rayon:12px;--lueur:42,120,214;--haut:#f6f6f3;--or:#fab219}
+:root[data-theme="dark"]{color-scheme:dark;--page:#0d0d0d;--surface:#1a1a19;--surface-2:#242422;--texte:#f0efec;--texte-2:#c3c2b7;--doux:#898781;--grille:#2c2c2a;--axe:#383835;--bord:rgba(255,255,255,.10);--bord-fort:rgba(255,255,255,.2);--accent:#3987e5;--accent-ink:#86b6ef;--accent-piste:#16304f;--vert:#0ca30c;--vert-ink:#3cc43c;--orange:#fab219;--rouge:#d03b3b;--rouge-ink:#ee6a6a;--rayon:12px;--lueur:57,135,229;--haut:#0d0d0d;--or:#fab219}
+:root[data-theme="papier"]{color-scheme:light;--page:#efe6d3;--surface:#f9f3e6;--surface-2:#efe5cf;--texte:#2b2620;--texte-2:#5b5244;--doux:#867b69;--grille:#e2d6bd;--axe:#c8b998;--bord:rgba(60,45,20,.13);--bord-fort:rgba(60,45,20,.24);--accent:#2f6db5;--accent-ink:#22528a;--accent-piste:#d9e2ec;--vert:#2e8b2e;--vert-ink:#1c641c;--orange:#d99a1e;--rouge:#c0392b;--rouge-ink:#9c2a1f;--rayon:12px;--lueur:47,109,181;--haut:#efe6d3;--or:#d99a1e}
+:root[data-theme="penombre"]{color-scheme:dark;--page:#1b1d21;--surface:#23262b;--surface-2:#2b2f35;--texte:#dcd9d2;--texte-2:#aaa69e;--doux:#7f7c76;--grille:#33373e;--axe:#444950;--bord:rgba(255,255,255,.08);--bord-fort:rgba(255,255,255,.16);--accent:#6d9fd6;--accent-ink:#9cc0e8;--accent-piste:#22364d;--vert:#4f9d5a;--vert-ink:#86c890;--orange:#c9a14a;--rouge:#c46060;--rouge-ink:#e59494;--rayon:12px;--lueur:109,159,214;--haut:#1b1d21;--or:#c9a14a}
+:root[data-theme="futur-confort"]{color-scheme:dark;--page:#16181c;--surface:#1d2025;--surface-2:#252930;--texte:#e6dfcc;--texte-2:#b2ab96;--doux:#827d6f;--grille:#2c3038;--axe:#3b4048;--bord:rgba(217,178,95,.13);--bord-fort:rgba(217,178,95,.26);--accent:#d9b25f;--accent-ink:#e8c97f;--accent-piste:#3a3220;--vert:#7fb98a;--vert-ink:#a2d1aa;--orange:#e0a458;--rouge:#d47f6f;--rouge-ink:#e6a395;--lueur:217,178,95;--haut:#20242b;--rayon:4px;--or:#d9b25f}
+:root[data-theme="futur-confort-pervenche"]{color-scheme:dark;--page:#16181c;--surface:#1d2025;--surface-2:#252930;--texte:#e6dfcc;--texte-2:#b2ab96;--doux:#827d6f;--grille:#2c3038;--axe:#3b4048;--bord:rgba(154,152,208,.13);--bord-fort:rgba(154,152,208,.26);--accent:#9a98d0;--accent-ink:#c0bfe8;--accent-piste:#2d2c42;--vert:#7fb98a;--vert-ink:#a2d1aa;--orange:#e0a458;--rouge:#d47f6f;--rouge-ink:#e6a395;--lueur:154,152,208;--haut:#20242b;--rayon:4px;--or:#d9b25f}
+:root[data-theme="futur-confort-ivoire"]{color-scheme:dark;--page:#16181c;--surface:#1d2025;--surface-2:#252930;--texte:#e6dfcc;--texte-2:#b2ab96;--doux:#827d6f;--grille:#2c3038;--axe:#3b4048;--bord:rgba(189,181,160,.12);--bord-fort:rgba(189,181,160,.24);--accent:#b8b09b;--accent-ink:#ddd5c0;--accent-piste:#34322c;--vert:#7fb98a;--vert-ink:#a2d1aa;--orange:#e0a458;--rouge:#d47f6f;--rouge-ink:#e6a395;--lueur:189,181,160;--haut:#20242b;--rayon:4px;--or:#d9b25f}
+:root[data-theme="futuriste"]{color-scheme:dark;--page:#05070f;--surface:#0a1020;--surface-2:#101834;--texte:#d8f3ff;--texte-2:#8fb6cc;--doux:#5e7d92;--grille:#16213d;--axe:#22325c;--bord:rgba(0,229,255,.16);--bord-fort:rgba(0,229,255,.34);--accent:#00d8f0;--accent-ink:#5ff0ff;--accent-piste:#073246;--vert:#18e39a;--vert-ink:#3dffb0;--orange:#ffd23f;--rouge:#ff3d81;--rouge-ink:#ff78a8;--lueur:0,229,255;--haut:#0d1838;--rayon:4px;--or:#ffd23f}
+:root[data-theme="futur-ambre"]{color-scheme:dark;--page:#0c0802;--surface:#160f05;--surface-2:#22180a;--texte:#ffe9c4;--texte-2:#d1ad74;--doux:#8f7448;--grille:#2a1e0d;--axe:#3d2c12;--bord:rgba(255,170,40,.18);--bord-fort:rgba(255,170,40,.36);--accent:#ffae1f;--accent-ink:#ffc865;--accent-piste:#3a2606;--vert:#7ee05a;--vert-ink:#a6f07e;--orange:#ffe14d;--rouge:#ff4d3d;--rouge-ink:#ff8a7a;--lueur:255,170,40;--haut:#241505;--rayon:4px;--or:#ffe14d}
+:root[data-theme="futur-vert"]{color-scheme:dark;--page:#020a04;--surface:#04140a;--surface-2:#072011;--texte:#c8ffd8;--texte-2:#7fcf98;--doux:#4f8a62;--grille:#0b2a16;--axe:#124022;--bord:rgba(57,255,120,.16);--bord-fort:rgba(57,255,120,.34);--accent:#39ff78;--accent-ink:#8affb0;--accent-piste:#08361a;--vert:#d4ff5e;--vert-ink:#e2ff8f;--orange:#ffd23f;--rouge:#ff5f56;--rouge-ink:#ff8f88;--lueur:57,255,120;--haut:#06200f;--rayon:4px;--or:#ffd23f}
+:root[data-theme="futur-violet"]{color-scheme:dark;--page:#08040f;--surface:#120a20;--surface-2:#1b1030;--texte:#efe2ff;--texte-2:#b79ad8;--doux:#7b6596;--grille:#241640;--axe:#34205a;--bord:rgba(190,110,255,.18);--bord-fort:rgba(190,110,255,.36);--accent:#b66dff;--accent-ink:#d5a8ff;--accent-piste:#2b1450;--vert:#2ee6a8;--vert-ink:#5cf5c0;--orange:#ffd23f;--rouge:#ff4f9a;--rouge-ink:#ff86b8;--lueur:182,109,255;--haut:#1d0d3a;--rayon:4px;--or:#ffd23f}
+:root[data-theme="synthwave"]{color-scheme:dark;--page:#14062a;--surface:#1c0b36;--surface-2:#271046;--texte:#fbe9ff;--texte-2:#cba6e3;--doux:#8d6ba8;--grille:#2f1752;--axe:#46217a;--bord:rgba(255,92,205,.2);--bord-fort:rgba(255,92,205,.42);--accent:#ff5ccd;--accent-ink:#ff9be3;--accent-piste:#45123d;--vert:#36f9f6;--vert-ink:#7ffcfa;--orange:#fede5d;--rouge:#ff7a45;--rouge-ink:#ffa37f;--rayon:12px;--lueur:255,92,205;--haut:#14062a;--or:#fede5d}
+:root[data-theme="holo"]{color-scheme:light;--page:#eef3f8;--surface:rgba(255,255,255,.72);--surface-2:#e8eef6;--texte:#0f1b2d;--texte-2:#46566c;--doux:#7f8ea3;--grille:#dde5ef;--axe:#c3cfdd;--bord:rgba(80,110,160,.18);--bord-fort:rgba(80,110,160,.3);--accent:#3a6df0;--accent-ink:#2448b8;--accent-piste:#d6e0fb;--vert:#10a37f;--vert-ink:#086650;--orange:#e3a008;--rouge:#e5484d;--rouge-ink:#b4232a;--rayon:12px;--lueur:58,109,240;--haut:#eef3f8;--or:#e3a008}
+:root[data-theme="cyberpunk"]{color-scheme:dark;--page:#0a0a0a;--surface:#121212;--surface-2:#1c1c1c;--texte:#f2f2e9;--texte-2:#b9b8a8;--doux:#77766a;--grille:#262626;--axe:#3a3a3a;--bord:rgba(252,238,10,.18);--bord-fort:rgba(252,238,10,.42);--accent:#fcee0a;--accent-ink:#fff35c;--accent-piste:#3a3700;--vert:#00f0ff;--vert-ink:#5cf7ff;--orange:#ff9f1c;--rouge:#ff003c;--rouge-ink:#ff5c7a;--rayon:12px;--lueur:252,238,10;--haut:#0a0a0a;--or:#ff9f1c}
+:root[data-theme="licorne"]{color-scheme:light;--page:#fdf2fb;--surface:#fffaff;--surface-2:#f6e8f7;--texte:#3b2445;--texte-2:#6a4f75;--doux:#9c86a5;--grille:#efdcf1;--axe:#dcc3e0;--bord:rgba(120,60,140,.14);--bord-fort:rgba(120,60,140,.26);--accent:#b545cf;--accent-ink:#8e2aa6;--accent-piste:#f1d2f7;--vert:#1fae95;--vert-ink:#0b6656;--orange:#f4a73b;--rouge:#e94f86;--rouge-ink:#b8285c;--rayon:12px;--lueur:181,69,207;--haut:#fdf2fb;--or:#f4a73b}
+:root[data-theme="lcd"]{color-scheme:light;--page:#cfc8b8;--surface:#b9c4a9;--surface-2:#acb89b;--texte:#1d2418;--texte-2:#36402f;--doux:#566250;--grille:#a3af94;--axe:#8a9679;--bord:rgba(29,36,24,.22);--bord-fort:rgba(29,36,24,.45);--accent:#1d2418;--accent-ink:#1d2418;--accent-piste:#a6b296;--vert:#2f5d2a;--vert-ink:#1f4a1c;--orange:#8a5a10;--rouge:#8c1c13;--rouge-ink:#7a1610;--rayon:12px;--lueur:29,36,24;--haut:#cfc8b8;--or:#8a5a10}
+:root[data-theme="cartoon"]{color-scheme:light;--page:#fff6dc;--surface:#ffffff;--surface-2:#fff1c2;--texte:#1a1a1a;--texte-2:#3b3b3b;--doux:#6b6b6b;--grille:#efe0ad;--axe:#1a1a1a;--bord:rgba(26,26,26,.22);--bord-fort:#1a1a1a;--accent:#2f80ed;--accent-ink:#1655b0;--accent-piste:#d6e6ff;--vert:#27ae60;--vert-ink:#167a3e;--orange:#f2c94c;--rouge:#eb5757;--rouge-ink:#b3261e;--rayon:16px;--lueur:47,128,237;--haut:#fff6dc;--or:#f2c94c}
+/* ---------- décors des thèmes (adaptés des décors du dashboard aux éléments de l'appli) ---------- */
+/* par défaut sous un thème choisi : fond uni (la grille de fond est réservée à la famille futuriste) */
+:root[data-theme] body { background: var(--page); }
+:root[data-theme="light"] h1, :root[data-theme="dark"] h1, :root[data-theme="papier"] h1, :root[data-theme="penombre"] h1,
+:root[data-theme="light"] h2, :root[data-theme="dark"] h2, :root[data-theme="papier"] h2, :root[data-theme="penombre"] h2 { letter-spacing: .04em; }
+
+/* famille futuriste : grille néon, halo en haut, lueurs */
+:root[data-theme^="futur"] body { background:
+  linear-gradient(rgba(var(--lueur), .035) 1px, transparent 1px) 0 0 / 32px 32px,
+  linear-gradient(90deg, rgba(var(--lueur), .035) 1px, transparent 1px) 0 0 / 32px 32px,
+  radial-gradient(ellipse at top, var(--haut), var(--page) 60%) fixed; background-color: var(--page); }
+:root[data-theme="futuriste"] h1, :root[data-theme="futur-ambre"] h1, :root[data-theme="futur-violet"] h1 { text-shadow: 0 0 12px rgba(var(--lueur), .55); }
+:root[data-theme="futuriste"] .gros, :root[data-theme="futur-ambre"] .gros, :root[data-theme="futur-vert"] .gros, :root[data-theme="futur-violet"] .gros { box-shadow: 0 0 12px rgba(var(--lueur), .5); }
+:root[data-theme="futuriste"] .carte-info, :root[data-theme="futuriste"] .panneau, :root[data-theme="futur-ambre"] .carte-info, :root[data-theme="futur-ambre"] .panneau,
+:root[data-theme="futur-vert"] .carte-info, :root[data-theme="futur-vert"] .panneau, :root[data-theme="futur-violet"] .carte-info, :root[data-theme="futur-violet"] .panneau { box-shadow: 0 0 0 1px rgba(var(--lueur), .06), 0 0 26px rgba(var(--lueur), .07); }
+/* futuriste confort : grille plus discrète, aucune lueur */
+:root[data-theme^="futur-confort"] body { background:
+  linear-gradient(rgba(var(--lueur), .022) 1px, transparent 1px) 0 0 / 32px 32px,
+  linear-gradient(90deg, rgba(var(--lueur), .022) 1px, transparent 1px) 0 0 / 32px 32px,
+  radial-gradient(ellipse at top, var(--haut), var(--page) 60%) fixed; background-color: var(--page); }
+/* terminal : tout en chasse fixe */
+:root[data-theme="futur-vert"] body { font-family: var(--mono); }
+:root[data-theme="futur-vert"] h1 { text-shadow: 0 0 8px rgba(57, 255, 120, .8); }
+
+/* licorne : pastels, arc-en-ciel discret */
+:root[data-theme="licorne"] body { background: linear-gradient(135deg, #fdeef9 0%, #efe9ff 35%, #e6f7f6 70%, #fff6e6 100%) fixed; }
+:root[data-theme="licorne"] h1 { background: linear-gradient(90deg, #c13fb3, #7b5cf0, #2a9fd6); -webkit-background-clip: text; background-clip: text; color: transparent; }
+:root[data-theme="licorne"] h1 .sous { -webkit-text-fill-color: var(--doux); }
+:root[data-theme="licorne"] .carte-info, :root[data-theme="licorne"] .panneau { border-radius: 18px; }
+:root[data-theme="licorne"] .gros { background: linear-gradient(90deg, #a8379b, #6a4fd0); border-color: transparent; color: #fff; }
+:root[data-theme="licorne"] nav { border-top: 3px solid transparent; border-image: linear-gradient(90deg, #ff9ad5, #c49bff, #8fd3ff, #8ff0c8, #ffe08a) 1; }
+
+/* synthwave : coucher de soleil années 80, grille en perspective */
+:root[data-theme="synthwave"] body { background: linear-gradient(180deg, #14062a 0%, #2a0b4d 55%, #5a1460 85%, #ff6a88 140%) fixed; }
+:root[data-theme="synthwave"] body::before { content: ""; position: fixed; left: -50%; right: -50%; bottom: 0; height: 42vh; z-index: -1; pointer-events: none;
+  background: linear-gradient(rgba(255, 92, 205, .35) 1px, transparent 1px) 0 0 / 100% 34px, linear-gradient(90deg, rgba(54, 249, 246, .28) 1px, transparent 1px) 0 0 / 60px 100%;
+  transform: perspective(320px) rotateX(62deg); transform-origin: bottom; mask-image: linear-gradient(transparent, #000 70%); -webkit-mask-image: linear-gradient(transparent, #000 70%); }
+:root[data-theme="synthwave"] h1 { font-style: italic; background: linear-gradient(180deg, #fede5d, #ff5ccd); -webkit-background-clip: text; background-clip: text; color: transparent; filter: drop-shadow(0 0 8px rgba(255, 92, 205, .6)); }
+:root[data-theme="synthwave"] h1 .sous { -webkit-text-fill-color: var(--texte-2); }
+:root[data-theme="synthwave"] .carte-info, :root[data-theme="synthwave"] .panneau { background: rgba(28, 11, 54, .88); }
+:root[data-theme="synthwave"] .gros { background: linear-gradient(90deg, #c2389b, #5b2bd6); border-color: transparent; color: #fff; }
+
+/* holographique : verre dépoli sur fond irisé (texte secondaire un peu plus foncé que le dashboard : contraste 3,0 -> 3,9) */
+:root[data-theme="holo"] { --doux: #687789; }
+:root[data-theme="holo"] body { background: radial-gradient(circle at 12% 18%, #c8f1ff 0, transparent 38%), radial-gradient(circle at 88% 12%, #f3d4ff 0, transparent 40%),
+  radial-gradient(circle at 70% 85%, #d4ffe9 0, transparent 40%), radial-gradient(circle at 20% 90%, #ffe6d4 0, transparent 35%), #eef3f8 fixed; }
+:root[data-theme="holo"] .carte-info, :root[data-theme="holo"] .panneau { background: rgba(255, 255, 255, .6); backdrop-filter: blur(16px) saturate(1.3); -webkit-backdrop-filter: blur(16px) saturate(1.3);
+  border: 1px solid rgba(255, 255, 255, .75); border-radius: 18px; box-shadow: 0 8px 28px rgba(60, 90, 150, .12); }
+:root[data-theme="holo"] h1 { background: linear-gradient(90deg, #2448b8, #8b5cf6, #0ea5b7); -webkit-background-clip: text; background-clip: text; color: transparent; }
+:root[data-theme="holo"] h1 .sous { -webkit-text-fill-color: var(--doux); }
+
+/* cyberpunk : noir, jaune signalétique, angles coupés */
+:root[data-theme="cyberpunk"] body { background: repeating-linear-gradient(-45deg, #0a0a0a 0 22px, #0d0d0d 22px 44px) fixed; }
+:root[data-theme="cyberpunk"] h1 { display: inline-flex; background: #fcee0a; color: #000; padding: 2px 10px; }
+:root[data-theme="cyberpunk"] h1 .sous { color: #333; }
+:root[data-theme="cyberpunk"] .carte-info, :root[data-theme="cyberpunk"] .panneau { border-radius: 0; border-left: 3px solid #fcee0a;
+  clip-path: polygon(0 0, calc(100% - 16px) 0, 100% 16px, 100% 100%, 16px 100%, 0 calc(100% - 16px)); }
+:root[data-theme="cyberpunk"] .gros { color: #000; }
+:root[data-theme="cyberpunk"] nav { border-top: 2px solid #fcee0a; }
+
+/* LCD rétro : boîtier métal, écran gris-vert, liseré bordeaux */
+:root[data-theme="lcd"] body { background: linear-gradient(180deg, #ddd7c9, #c4bdac 60%, #b9b19f) fixed; }
+:root[data-theme="lcd"] .carte-info, :root[data-theme="lcd"] .panneau { border: 6px solid #d9d2c2; outline: 1px solid #9f9785; border-radius: 8px;
+  background: radial-gradient(ellipse at 30% 20%, #c3cdb3, #b4bfa4 70%); box-shadow: inset 0 2px 6px rgba(0, 0, 0, .25); }
+:root[data-theme="lcd"] h1 { color: #8c1c13; }
+:root[data-theme="lcd"] .gros { background: #8c1c13; border-color: #5e120c; border-radius: 99px; color: #f3ead8; box-shadow: inset 0 -3px 0 rgba(0, 0, 0, .3); }
+:root[data-theme="lcd"] nav { border-top: 4px solid #8c1c13; }
+
+/* cartoon : contours noirs épais, ombres décalées, trame de points */
+:root[data-theme="cartoon"] body { background: radial-gradient(rgba(242, 153, 74, .22) 1.6px, transparent 1.8px) 0 0 / 16px 16px, #fff6dc; }
+:root[data-theme="cartoon"] h1, :root[data-theme="cartoon"] h2, :root[data-theme="cartoon"] .ch-titre { font-family: "Comic Sans MS", "Comic Neue", "Chalkboard SE", "Segoe Print", cursive; }
+:root[data-theme="cartoon"] h1 { text-shadow: 3px 3px 0 #ffd23f; }
+:root[data-theme="cartoon"] .carte-info, :root[data-theme="cartoon"] .panneau { border: 3px solid #1a1a1a; box-shadow: 5px 5px 0 #1a1a1a; background: #fff; }
+:root[data-theme="cartoon"] .gros, :root[data-theme="cartoon"] .second, :root[data-theme="cartoon"] .opt, :root[data-theme="cartoon"] .seg { border: 2px solid #1a1a1a; box-shadow: 2px 2px 0 #1a1a1a; }
+:root[data-theme="cartoon"] .gros { color: #fff; }
+:root[data-theme="cartoon"] nav { background: #ffd23f; border-top: 4px solid #1a1a1a; }
+

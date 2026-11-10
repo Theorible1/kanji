@@ -1,7 +1,7 @@
 // Service worker : met l'appli en cache pour qu'elle marche hors connexion.
 // Changer VERSION à chaque mise à jour des fichiers pour forcer le rafraîchissement.
-const VERSION = "kanji-v9";
-const FICHIERS = ["./", "index.html", "style.css", "app.js", "srs.js", "data.js", "manifest.webmanifest", "nihon-192.png", "nihon-512.png", "logo.svg"];
+const VERSION = "kanji-v10";
+const FICHIERS = ["./", "index.html", "style.css", "app.js", "srs.js", "data.js", "manifest.webmanifest", "themes.css", "themes.js", "nihon-192.png", "nihon-512.png", "logo.svg"];
 
 self.addEventListener("install", (e) => {
   e.waitUntil(caches.open(VERSION).then((c) => c.addAll(FICHIERS)).then(() => self.skipWaiting()));

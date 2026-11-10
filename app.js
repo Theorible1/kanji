@@ -40,6 +40,23 @@
     try { localStorage.setItem(CLE, JSON.stringify(etat)); } catch (e) { alerte("Impossible d'enregistrer la progression sur ce téléphone."); }
   }
   charger();
+
+  // ---------- thème (repris du dashboard ; défaut = futuriste confort · ardoise, celui de style.css) ----------
+  const THEME_DEFAUT = "futur-confort-ardoise";
+  const NOMS_THEMES = Object.fromEntries((window.THEMES || []).flatMap(([, ts]) => ts));
+  const sombre = matchMedia("(prefers-color-scheme: dark)");
+  function appliquerTheme() {
+    let t = etat.reglages.theme || THEME_DEFAUT;
+    if (!NOMS_THEMES[t]) t = THEME_DEFAUT;
+    try { localStorage.setItem("kanjiApp.theme", t); } catch (e) {}
+    if (t === "auto") t = sombre.matches ? "dark" : "light";
+    if (t === THEME_DEFAUT) document.documentElement.removeAttribute("data-theme");
+    else document.documentElement.setAttribute("data-theme", t);
+    const meta = document.querySelector('meta[name="theme-color"]');
+    if (meta) meta.content = getComputedStyle(document.documentElement).getPropertyValue("--page").trim() || "#16181c";
+  }
+  appliquerTheme();
+  sombre.addEventListener("change", () => { if (etat.reglages.theme === "auto") appliquerTheme(); });
   if (navigator.storage && navigator.storage.persist) navigator.storage.persist().catch(() => {});
 
   // ---------- outils d'affichage ----------
@@ -191,7 +208,8 @@
     const ctx = c.getContext("2d");
     const dpr = window.devicePixelRatio || 1;
     const W = c.width = innerWidth * dpr, Hh = c.height = innerHeight * dpr;
-    const couleurs = ["#7ea3c4", "#a8c4dc", "#d9b25f", "#ecd08c", "#7fb98a", "#d47f6f", "#e6dfcc"];
+    const cs = getComputedStyle(document.documentElement);
+    const couleurs = ["--accent", "--accent-ink", "--or", "--orange", "--vert", "--rouge", "--texte"].map((v) => cs.getPropertyValue(v).trim() || "#d9b25f");
     const fusees = [], eclats = [];
     let t0 = performance.now(), fini = false, dernier = 0;
     const lancer = () => fusees.push({ x: W * (0.15 + Math.random() * 0.7), y: Hh, vx: (Math.random() - .5) * 2 * dpr,
@@ -200,7 +218,7 @@
       const n = 70 + Math.floor(Math.random() * 40);
       for (let i = 0; i < n; i++) {
         const a = (i / n) * Math.PI * 2, v = (2 + Math.random() * 4) * dpr;
-        eclats.push({ x: f.x, y: f.y, vx: Math.cos(a) * v, vy: Math.sin(a) * v, vie: 1, c: Math.random() < .2 ? "#e6dfcc" : f.c });
+        eclats.push({ x: f.x, y: f.y, vx: Math.cos(a) * v, vy: Math.sin(a) * v, vie: 1, c: Math.random() < .2 ? couleurs[6] : f.c });
       }
     };
     const fin = () => { if (fini) return; fini = true; c.remove(); msg.remove(); ensuite(); };
@@ -236,7 +254,8 @@
   // ---------- JOUER : révisions dues, puis nouvelles cartes dosées ----------
   function jouer() {
     // mode après l'objectif atteint : null (pas encore choisi), "normal" (cartes ajoutées quand même), "libre" (sans impact)
-    const session = { rattrapage: [], depuis: 0, mode: null, faites: 0, nouvelles: 0, fete: false, vues: new Set(), challenge: null };
+    const session = { rattrapage: [], depuis: 0, mode: null, faites: 0, nouvelles: 0, fete: false, vues: new Set(), challenge: null,
+      relance: (etat.profil.jours[L.cleJour(maintenant())] || 0) > 0 };   // déjà joué aujourd'hui au moment d'ouvrir la partie
     const nomCarte = (id) => { const x = info(id); return `${x.genre === "k" ? "Kanji" : "Mot"} · ${x.type}`; };
     const suivante = () => {
       const t = maintenant();
@@ -260,6 +279,8 @@
       if (!session.mode) {
         const s = L.nouvelleSupportable(etat, t);
         if (!s.ok) return objectifAtteint(s);
+        // relance après avoir déjà joué aujourd'hui (révisions faites) : on redonne le choix normal / sans impact
+        if (session.relance && session.faites === 0 && !session.choix) return choixRelance();
       }
       nouvelle(prochaine.carte.id, session.mode === "libre");
     };
@@ -292,6 +313,7 @@
       const x = info(id);
       const titre = libre ? `Sans impact · ${nomCarte(id)}` : `Nouvelle carte · ${nomCarte(id)}`;
       const texteErreur = libre ? "Pas ajoutée à tes révisions (mode sans impact) : elle reviendra plus tard." : "Carte ajoutée à tes révisions (Apprenti 1).";
+      session.choix = true;   // une carte nouvelle a été posée : plus de question de relance dans cette partie
       poser(id, { titre, texteErreur }, (res, sec) => {
         ajouterTemps(L.tempsActif(etat, sec));
         session.depuis++;
@@ -335,6 +357,17 @@
       $("#b-stop").onclick = accueil;
       $("#b-libre").onclick = () => { session.mode = "libre"; suivante(); };
       $("#b-plus").onclick = () => { session.mode = "normal"; suivante(); };
+    };
+    const choixRelance = () => {
+      session.choix = true;
+      ecran.innerHTML = `<div class="retour ok">Révisions du jour faites ✓</div>
+        <p class="info">Tu as encore de la place dans ton objectif. Comment veux-tu continuer ?</p>
+        <button class="gros" id="b-normal">Nouvelles cartes</button>
+        <p class="aide">Mode normal : les cartes entrent dans tes révisions, jusqu'à ton objectif du jour.</p>
+        <button class="second" id="b-libre">Sans impact</button>
+        <p class="aide">Tu te testes ; seules les cartes notées Bien ou Très bien entrent dans tes révisions.</p>`;
+      $("#b-normal").onclick = suivante;
+      $("#b-libre").onclick = () => { session.mode = "libre"; suivante(); };
     };
     const finJeu = (pr) => {
       const prochaine = L.prochaineRevision(etat);
@@ -534,6 +567,12 @@
         <p class="aide">Jouer propose de nouvelles cartes tant que les 5 prochains jours restent sous ce temps.</p>
       </section>
       <section class="panneau">
+        <h2>Thème</h2>
+        <select id="s-theme" class="choix-theme" aria-label="Thème">${(window.THEMES || []).map(([fam, ts]) => `<optgroup label="${esc(fam)}">${ts.map(([k, nom]) =>
+          `<option value="${k}" ${k === (etat.reglages.theme || THEME_DEFAUT) ? "selected" : ""}>${esc(nom)}</option>`).join("")}</optgroup>`).join("")}</select>
+        <p class="aide">Les thèmes du dashboard SUPERVISOR3000. Le changement est immédiat.</p>
+      </section>
+      <section class="panneau">
         <h2>Ce que l'appli sait de toi</h2>
         <div class="tuiles-stat">
           <div class="stat"><b>${taux} %</b><span>bonnes réponses</span></div>
@@ -569,7 +608,11 @@
         <summary>Sources</summary>
         <p class="aide">Kanji, lectures : KANJIDIC2 (EDRDG, licence CC BY-SA 4.0). Listes N5/N4 : tanos.co.uk (J. Waller, CC BY) et ebooks Kanpai. Listes non officielles (pas de liste officielle depuis 2010).</p>
       </details>
-      <button class="second danger" id="b-raz">Tout effacer et recommencer</button>`;
+      <details class="panneau vraiment">
+        <summary>VRAIMENT !?</summary>
+        <p class="aide">Efface toute ta progression pour repartir de zéro (tes réglages sont gardés).</p>
+        <button class="second danger" id="b-raz">Tout effacer et recommencer</button>
+      </details>`;
     document.querySelectorAll("[data-niv]").forEach((bt) => bt.onclick = () => {
       if (bt.dataset.niv === cartesActives().choix) return;
       etat.reglages.niveaux = bt.dataset.niv;
@@ -582,6 +625,7 @@
       invitation.prompt();
       invitation.userChoice.then((c) => { invitation = null; if (c.outcome === "accepted") alerte("Installation en cours…"); vueOptions(); });
     };
+    $("#s-theme").onchange = (e) => { etat.reglages.theme = e.target.value; sauver(); appliquerTheme(); alerte(`Thème : ${NOMS_THEMES[e.target.value]}`); };
     $("#s-obj").onchange =(e) => { etat.reglages.objectif = +e.target.value; sauver(); alerte(`Temps visé : ${e.target.value} min par jour`); };
     $("#b-sauv").onclick = () => {
       const blob = new Blob([JSON.stringify(etat)], { type: "application/json" });
@@ -597,7 +641,7 @@
         const e2 = JSON.parse(txt);
         if (!e2 || !e2.tuiles) throw new Error("format");
         fenetre("Restaurer cette sauvegarde ?", "Ta progression actuelle sera remplacée par celle du fichier.", [
-          ["Oui, restaurer", "gros", () => { etat = L.migrer(e2); sauver(); alerte("Sauvegarde restaurée."); accueil(); }],
+          ["Oui, restaurer", "gros", () => { etat = L.migrer(e2); sauver(); appliquerTheme(); alerte("Sauvegarde restaurée."); accueil(); }],
           ["Annuler", "second", null]]);
       }).catch(() => alerte("Ce fichier n'est pas une sauvegarde valable."));
     };
@@ -627,7 +671,7 @@
   // ---------- navigation ----------
   const VUES = { accueil, progres: vueProgres, acquis: vueAcquis, options: vueOptions };
   document.querySelectorAll("nav button").forEach((b) => b.onclick = () => { clearInterval(minuteur); VUES[b.dataset.vue](); });
-  window.__app = { accueil, etat: () => etat, recharger: () => { charger(); accueil(); }, CARTES };   // tests
+  window.__app = { accueil, etat: () => etat, recharger: () => { charger(); appliquerTheme(); accueil(); }, CARTES };   // tests
   accueil();
   if ("serviceWorker" in navigator && location.protocol.startsWith("http")) navigator.serviceWorker.register("sw.js").catch(() => {});
 })();
