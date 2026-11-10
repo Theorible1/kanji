@@ -96,6 +96,7 @@
       consigne = x.type === "sens" ? "Que signifie ce mot ?" : "Comment se lit ce mot ?";
     }
     if (x.type === "sens") g.options = g.options.map(maj), g.bonne = maj(g.bonne);
+    window.__bonne = g.bonne;   // tests
     ecran.innerHTML = `
       <div class="q-tete"><span>${esc(opts.titre || "")}</span>${opts.chrono ? `<span class="chrono" id="chrono">${opts.chrono} s</span>` : ""}<button class="quitter" id="b-quit">✕</button></div>
       ${opts.chrono ? `<div class="barre"><div id="barre"></div></div>` : ""}
@@ -207,7 +208,8 @@
 
   // ---------- JOUER : révisions dues, puis nouvelles cartes dosées ----------
   function jouer() {
-    const session = { rattrapage: [], depuis: 0, forcer: false, faites: 0, nouvelles: 0, fete: false };
+    // mode après l'objectif atteint : null (pas encore choisi), "normal" (cartes ajoutées quand même), "libre" (sans impact)
+    const session = { rattrapage: [], depuis: 0, mode: null, faites: 0, nouvelles: 0, fete: false, vues: new Set() };
     const nomCarte = (id) => { const x = info(id); return `${x.genre === "k" ? "Kanji" : "Mot"} · ${x.type}`; };
     const suivante = () => {
       const t = maintenant();
@@ -217,13 +219,13 @@
       if (dues.length) return reviser(dues[0], dues.length);
       // plus de révision : feu d'artifice si on vient de les finir, puis nouvelle carte si le budget le permet
       if (session.faites > 0 && !session.fete) { session.fete = true; return feuDArtifice(suivante); }
-      const prochaine = L.prochaineNouvelle(etat, CARTES);
+      const prochaine = L.prochaineNouvelle(etat, CARTES, session.mode === "libre" ? session.vues : null);
       if (!prochaine.carte) return finJeu(prochaine);
-      if (!session.forcer) {
+      if (!session.mode) {
         const s = L.nouvelleSupportable(etat, t);
         if (!s.ok) return objectifAtteint(s);
       }
-      nouvelle(prochaine.carte.id);
+      nouvelle(prochaine.carte.id, session.mode === "libre");
     };
     const reviser = (id, reste) => {
       const t0 = etat.tuiles[id];
@@ -249,21 +251,36 @@
         suivante();
       });
     };
-    const nouvelle = (id) => {
+    // libre = mode sans impact : la carte n'entre dans les révisions que si sa note ne charge pas les 5 prochains jours
+    const nouvelle = (id, libre) => {
       const x = info(id);
-      poser(id, { titre: `Nouvelle carte · ${nomCarte(id)}`, texteErreur: "Carte ajoutée à tes révisions (Apprenti 1)." }, (res, sec) => {
+      const titre = libre ? `Sans impact · ${nomCarte(id)}` : `Nouvelle carte · ${nomCarte(id)}`;
+      const texteErreur = libre ? "Pas ajoutée à tes révisions (mode sans impact) : elle reviendra plus tard." : "Carte ajoutée à tes révisions (Apprenti 1).";
+      poser(id, { titre, texteErreur }, (res, sec) => {
         ajouterTemps(L.tempsActif(etat, sec));
-        session.nouvelles++; session.depuis++;
-        if (res !== "juste") { L.placer(etat, id, 1, maintenant()); sauver(); return suivante(); }
+        session.depuis++;
+        if (res !== "juste") {
+          if (libre) { session.vues.add(id); return suivante(); }
+          session.nouvelles++; L.placer(etat, id, 1, maintenant()); sauver(); return suivante();
+        }
         const niveaux = [["tres_peu", "Très peu (c'était de la chance)"], ["un_peu", "Un peu"], ["moyen", "Moyen"], ["bien", "Bien"], ["tres_bien", "Très bien"]];
+        const t = maintenant();
+        const garde = libre ? Object.fromEntries(niveaux.map(([k]) => [k, L.sansImpact(etat, t, S.CONFIANCE[k])])) : null;
         ecran.innerHTML = `<div class="retour ok">Juste !</div>
           ${x.genre === "k" ? `<div class="q-kanji petit jp">${esc(x.fiche.kanji)}</div>` : `<div class="q-mot petit jp">${motHTML(x.mot, false)}</div>`}
           <p class="consigne">Tu le connaissais comment ?</p>
-          <div class="options">${niveaux.map(([k, t]) => `<button class="opt" data-c="${k}">${t}</button>`).join("")}</div>`;
+          ${libre ? `<p class="info">Mode sans impact : la carte n'entre dans tes révisions que si ta note ne charge pas tes 5 prochains jours.</p>` : ""}
+          <div class="options">${niveaux.map(([k, tx]) => `<button class="opt" data-c="${k}">${tx}${libre ? `<span class="effet ${garde[k] ? "oui" : "non"}">${garde[k] ? "ajoutée" : "pas ajoutée"}</span>` : ""}</button>`).join("")}</div>`;
         document.querySelectorAll("[data-c]").forEach((b) => b.onclick = () => {
           const p = S.CONFIANCE[b.dataset.c];
+          if (libre && !garde[b.dataset.c]) {
+            session.vues.add(id);
+            alerte("Pas ajoutée : elle chargerait tes prochains jours. Elle reviendra plus tard.");
+            return suivante();
+          }
           L.placer(etat, id, p, maintenant()); sauver();
-          alerte(`Placée : ${S.NOMS[p]}`);
+          session.nouvelles++;
+          alerte(libre ? `Ajoutée sans impact : ${S.NOMS[p]}` : `Placée : ${S.NOMS[p]}`);
           suivante();
         });
       });
@@ -275,9 +292,13 @@
         de révision, au-dessus de ${b.adapte ? `ce que tu tiens en ce moment (${Math.round(b.minutes)} min)` : `ton objectif (${b.objectif} min)`}.</p>
         <p class="info">${session.faites} révision(s) et ${session.nouvelles} nouvelle(s) carte(s) dans cette séance.</p>
         <button class="gros" id="b-stop">Arrêter pour aujourd'hui</button>
-        <button class="second" id="b-plus">Continuer quand même</button>`;
+        <button class="second" id="b-libre">Continuer sans impact</button>
+        <p class="aide">Tu te testes sur les cartes suivantes. Une carte n'entre dans tes révisions que si tu la connaissais bien (sa 1re révision tombe après les 5 prochains jours) ; sinon elle reviendra plus tard, comme neuve.</p>
+        <button class="second" id="b-plus">Continuer en mode normal</button>
+        <p class="aide">Les nouvelles cartes entrent dans tes révisions comme d'habitude : tes prochains jours dépasseront ton objectif.</p>`;
       $("#b-stop").onclick = accueil;
-      $("#b-plus").onclick = () => { session.forcer = true; suivante(); };
+      $("#b-libre").onclick = () => { session.mode = "libre"; suivante(); };
+      $("#b-plus").onclick = () => { session.mode = "normal"; suivante(); };
     };
     const finJeu = (pr) => {
       const prochaine = L.prochaineRevision(etat);

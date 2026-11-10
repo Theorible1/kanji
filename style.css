@@ -90,6 +90,9 @@ button { font: inherit; color: inherit; cursor: pointer; }
 .opt { padding: 14px 12px; border: 1px solid var(--bord-fort); border-radius: var(--rayon); background: var(--surface); font-size: 1.1rem; text-align: center; }
 .opt:active { background: var(--surface-2); }
 .opt.jp { font-size: 1.3rem; }
+.opt .effet { display: block; margin-top: 3px; font-size: .78rem; letter-spacing: .04em; text-transform: uppercase; }
+.opt .effet.oui { color: var(--vert-ink); }
+.opt .effet.non { color: var(--doux); }
 .opt.jsp { color: var(--doux); font-size: .95rem; border-style: dashed; }
 .opt.bonne { border-color: var(--vert); background: rgba(127, 185, 138, .14); color: var(--vert-ink); }
 .opt.mauvaise { border-color: var(--rouge); background: rgba(212, 127, 111, .14); color: var(--rouge-ink); }

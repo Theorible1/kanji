@@ -88,9 +88,9 @@ function repondreAcquis(etat, id, juste, maintenant) {
 function kanjiConfirme(etat, k) {
   return ["sens", "lecture"].every((ty) => { const t = etat.tuiles[`k:${k}:${ty}`]; return t && t.statut === "placee" && t.palier >= SRS.CONFIRME; });
 }
-function prochaineNouvelle(etat, cartes) {
+function prochaineNouvelle(etat, cartes, exclues) {
   for (const phase of ["kanji", "combo", "mixte"]) {
-    const restantes = cartes.filter((c) => c.phase === phase && !introduite(etat, c.id));
+    const restantes = cartes.filter((c) => c.phase === phase && !introduite(etat, c.id) && !(exclues && exclues.has(c.id)));
     if (!restantes.length) continue;
     const prete = restantes.find((c) => c.prerequis.every((k) => kanjiConfirme(etat, k)));
     return prete ? { carte: prete, phase } : { carte: null, phase, attente: restantes.length };
@@ -169,12 +169,21 @@ function budget(etat, maintenant) {
   if (tenu !== null && tenu < objectif * 0.9) return { minutes: Math.max(2, tenu * 1.15), objectif, tenu, adapte: true };
   return { minutes: objectif, objectif, tenu, adapte: false };
 }
-// peut-on prendre une nouvelle carte sans dépasser le budget sur les 5 prochains jours ?
+// peut-on prendre une nouvelle carte (placée au palier opts.palier, Apprenti 1 par défaut) sans dépasser le budget sur les 5 prochains jours ?
 function nouvelleSupportable(etat, maintenant, opts = {}) {
   const b = budget(etat, maintenant);
-  const prev = simuler(etat, maintenant, Object.assign({}, opts, { ajouts: [[1, maintenant + SRS.INTERVALLE[1]]] }));
+  const pal = opts.palier || 1;
+  const prev = simuler(etat, maintenant, Object.assign({}, opts, { ajouts: [[pal, maintenant + SRS.INTERVALLE[pal]]] }));
   const pire = Math.max(...prev.slice(1).map((x) => x.minutes));
   return { ok: pire <= b.minutes, pire, budget: b, prevision: prev };
+}
+
+// mode sans impact : une carte placée à ce palier laisse-t-elle les 5 prochains jours sous le budget ?
+// (vrai d'office si sa 1re révision tombe après ces 5 jours : Confirmé 1 et au-delà)
+function sansImpact(etat, maintenant, palier, opts = {}) {
+  const fin = debutJour(maintenant) + ((opts.jours || SRS.JOURS_PREVISION) + 1) * J;
+  if (palier >= SRS.ACQUIS || maintenant + SRS.INTERVALLE[palier] >= fin) return true;
+  return nouvelleSupportable(etat, maintenant, Object.assign({}, opts, { palier })).ok;
 }
 
 // ---------- progression vers les 2 objectifs ----------
@@ -304,5 +313,5 @@ function qcmLectureMot(mot, tousMots, parKanji, alea = Math.random) {
 
 const SRSLib = { SRS, H, J, etatVide, migrer, placer, introduite, appliquerAbsences, revisionsDues, prochaineRevision, repondre,
   repondreAcquis, kanjiConfirme, prochaineNouvelle, enregistrerReponse, tauxReussite, secondesParCarte, tempsActif, cleJour, debutJour,
-  simuler, tempsTenu, budget, nouvelleSupportable, objectifs, noterHistorique, melanger, pieges, qcmLecture, qcmSens, qcmSensMot, qcmLectureMot };
+  simuler, tempsTenu, budget, nouvelleSupportable, sansImpact, objectifs, noterHistorique, melanger, pieges, qcmLecture, qcmSens, qcmSensMot, qcmLectureMot };
 if (typeof window !== "undefined") window.SRSLib = SRSLib;
