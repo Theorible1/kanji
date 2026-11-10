@@ -10,9 +10,21 @@
 
   // ---------- cartes (ordre d'apprentissage) ----------
   const CARTES = [];
-  for (const f of FICHES) for (const ty of ["sens", "lecture"]) CARTES.push({ id: `k:${f.kanji}:${ty}`, phase: "kanji", prerequis: [] });
-  for (const m of MOTS) for (const ty of m.lecture ? ["sens", "lecture"] : ["sens"]) CARTES.push({ id: `m:${m.mot}:${ty}`, phase: m.phase, prerequis: m.kanji });
+  for (const f of FICHES) for (const ty of ["sens", "lecture"]) CARTES.push({ id: `k:${f.kanji}:${ty}`, phase: "kanji", niveau: f.niveau, prerequis: [] });
+  for (const m of MOTS) for (const ty of m.lecture ? ["sens", "lecture"] : ["sens"]) CARTES.push({ id: `m:${m.mot}:${ty}`, phase: m.phase, niveau: m.niveau, prerequis: m.kanji });
   const IDS = CARTES.map((c) => c.id);
+  // ce qu'on travaille (Paramètres) : "N5", "N4" ou "N5N4". En N4 seul, les kanji N5 sont supposés connus (pas de prérequis).
+  const CHOIX_NIVEAUX = { N5: "N5 seulement", N4: "N4 seulement", N5N4: "N5 + N4" };
+  const actifs = {};
+  function cartesActives() {
+    const ch = (etat && CHOIX_NIVEAUX[etat.reglages.niveaux]) ? etat.reglages.niveaux : "N5N4";
+    if (!actifs[ch]) {
+      const ok = (niv) => ch.includes(niv);
+      const cartes = CARTES.filter((c) => ok(c.niveau)).map((c) => Object.assign({}, c, { prerequis: c.prerequis.filter((k) => ok(PAR_KANJI[k].niveau)) }));
+      actifs[ch] = { choix: ch, cartes, ids: cartes.map((c) => c.id) };
+    }
+    return actifs[ch];
+  }
   function info(id) {
     const [genre, cle, type] = id.split(":");
     return genre === "k" ? { genre, type, fiche: PAR_KANJI[cle], cle } : { genre, type, mot: PAR_MOT[cle], cle };
@@ -24,7 +36,7 @@
     try { etat = L.migrer(JSON.parse(localStorage.getItem(CLE))); } catch (e) { etat = L.etatVide(); }
   }
   function sauver() {
-    L.noterHistorique(etat, IDS, maintenant());
+    L.noterHistorique(etat, cartesActives().ids, maintenant());
     try { localStorage.setItem(CLE, JSON.stringify(etat)); } catch (e) { alerte("Impossible d'enregistrer la progression sur ce téléphone."); }
   }
   charger();
@@ -35,6 +47,17 @@
   const ecran = $("#ecran");
   const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
   const maj = (s) => (s ? s[0].toUpperCase() + s.slice(1) : s);
+  // fenêtre de confirmation (boutons : [[texte, classe, action]] ; toucher le fond = annuler)
+  function fenetre(titre, texte, boutons) {
+    const f = document.createElement("div");
+    f.className = "fenetre";
+    f.innerHTML = `<div class="fenetre-boite" role="dialog" aria-modal="true"><h2>${titre}</h2><p>${texte}</p>
+      ${boutons.map(([tx, cl], i) => `<button class="${cl}" data-f="${i}">${tx}</button>`).join("")}</div>`;
+    document.body.appendChild(f);
+    const fermer = () => f.remove();
+    f.onclick = (e) => { if (e.target === f) fermer(); };
+    f.querySelectorAll("[data-f]").forEach((b) => b.onclick = () => { fermer(); const a = boutons[+b.dataset.f][2]; if (a) a(); });
+  }
   function alerte(msg) { const a = document.createElement("div"); a.className = "toast"; a.textContent = msg; document.body.appendChild(a); setTimeout(() => a.remove(), 2200); }
   function duree(ms) {
     if (ms <= 0) return "maintenant";
@@ -142,7 +165,11 @@
         const reste = opts.chrono - secondes();
         const c = $("#chrono"), br = $("#barre");
         if (c) c.textContent = `${Math.max(0, Math.ceil(reste))} s`;
-        if (br) br.style.width = `${Math.max(0, (reste / opts.chrono) * 100)}%`;
+        if (br) {
+          const r = Math.max(0, reste / opts.chrono);
+          br.style.width = `${r * 100}%`;
+          br.className = r > .5 ? "plein" : r > .25 ? "moitie" : "fin";
+        }
         if (reste <= 0) finir("temps", null);
       }, 100);
     }
@@ -209,17 +236,26 @@
   // ---------- JOUER : révisions dues, puis nouvelles cartes dosées ----------
   function jouer() {
     // mode après l'objectif atteint : null (pas encore choisi), "normal" (cartes ajoutées quand même), "libre" (sans impact)
-    const session = { rattrapage: [], depuis: 0, mode: null, faites: 0, nouvelles: 0, fete: false, vues: new Set() };
+    const session = { rattrapage: [], depuis: 0, mode: null, faites: 0, nouvelles: 0, fete: false, vues: new Set(), challenge: null };
     const nomCarte = (id) => { const x = info(id); return `${x.genre === "k" ? "Kanji" : "Mot"} · ${x.type}`; };
     const suivante = () => {
       const t = maintenant();
       // une carte ratée revient après 3 autres cartes (ou tout de suite s'il n'y a plus rien d'autre)
       const dues = L.revisionsDues(etat, t).filter((id) => !session.rattrapage.includes(id));
       if (session.rattrapage.length && (session.depuis >= 3 || !dues.length)) return rattraper(session.rattrapage.shift());
+      if (dues.length && session.challenge === null) {
+        const n = dues.filter((id) => S.CHRONO[etat.tuiles[id].palier]).length;
+        session.challenge = n ? "en cours" : "aucun";
+        if (n) return annonceChallenge(dues.filter((id) => S.CHRONO[etat.tuiles[id].palier]), suivante);
+      }
+      if (session.challenge === "en cours" && !(dues.length && S.CHRONO[etat.tuiles[dues[0]].palier])) {
+        session.challenge = "fini";
+        if (dues.length) alerte("Challenge terminé ! Place aux révisions classiques.");
+      }
       if (dues.length) return reviser(dues[0], dues.length);
       // plus de révision : feu d'artifice si on vient de les finir, puis nouvelle carte si le budget le permet
       if (session.faites > 0 && !session.fete) { session.fete = true; return feuDArtifice(suivante); }
-      const prochaine = L.prochaineNouvelle(etat, CARTES, session.mode === "libre" ? session.vues : null);
+      const prochaine = L.prochaineNouvelle(etat, cartesActives().cartes, session.mode === "libre" ? session.vues : null);
       if (!prochaine.carte) return finJeu(prochaine);
       if (!session.mode) {
         const s = L.nouvelleSupportable(etat, t);
@@ -309,7 +345,43 @@
         <button class="gros" id="b-fin">Retour à l'accueil</button>`;
       $("#b-fin").onclick = accueil;
     };
-    suivante();
+    // objectif changé : la 1re fois, on demande quoi faire des cartes commencées hors objectif
+    const hors = etat.reglages.demanderObjectif ? horsObjectif() : [];
+    delete etat.reglages.demanderObjectif;
+    if (!hors.length) return suivante();
+    sauver();
+    ecran.innerHTML = `<div class="retour ok">Nouvel objectif : ${CHOIX_NIVEAUX[cartesActives().choix]}</div>
+      <p class="info"><b>${hors.length}</b> carte(s) déjà commencée(s) ne font pas partie de ton objectif.</p>
+      <button class="gros" id="b-retirer">Les retirer de mes révisions</button>
+      <p class="aide">Elles sont mises en pause avec leur progression. Si tu les remets dans ton objectif, elles reprennent là où elles en étaient.</p>
+      <button class="second" id="b-garder">Les garder dans mes révisions</button>`;
+    $("#b-retirer").onclick = () => { const n = L.pauser(etat, hors, maintenant()); sauver(); alerte(`${n} carte(s) mise(s) en pause.`); suivante(); };
+    $("#b-garder").onclick = suivante;
+  }
+
+  // cartes commencées, non acquises, actives, mais hors de l'objectif
+  function horsObjectif() {
+    const dans = new Set(cartesActives().ids);
+    return Object.entries(etat.tuiles).filter(([id, t]) => !dans.has(id) && t.statut === "placee" && !t.pause && t.palier < S.ACQUIS).map(([id]) => id);
+  }
+
+  // ---------- annonce CHALLENGE (cartes chronométrées en tête des révisions) ----------
+  function annonceChallenge(ids, ensuite) {
+    const n30 = ids.filter((id) => etat.tuiles[id].palier === 9).length, n12 = ids.length - n30;
+    const d = document.createElement("div");
+    d.className = "challenge";
+    d.innerHTML = `<div class="ch-titre">CHALLENGE!</div>
+      <div class="ch-nombre">${ids.length}</div>
+      <div class="ch-texte">carte${ids.length > 1 ? "s" : ""} chronométrée${ids.length > 1 ? "s" : ""}</div>
+      <div class="ch-detail">${[n12 ? `${n12} à 12 s` : "", n30 ? `${n30} à 30 s` : ""].filter(Boolean).join(" · ")}</div>
+      <div class="ch-barre"><div></div></div>
+      <div class="ch-aide">Touche l'écran pour commencer tout de suite</div>`;
+    document.body.appendChild(d);
+    let fini = false;
+    const go = () => { if (fini) return; fini = true; clearTimeout(minuterie); d.remove(); ensuite(); };
+    const minuterie = setTimeout(go, 3500);
+    d.onclick = go;
+    window.__challenge = { go };   // tests
   }
 
   // ---------- accueil ----------
@@ -327,7 +399,7 @@
   }
   function courbe() {
     const h = Object.entries(etat.historique).sort();
-    const o = L.objectifs(etat, IDS);
+    const o = L.objectifs(etat, cartesActives().ids);
     const tete = `<div class="obj"><span class="pastille c1"></span>Objectif 1 : sortir d'Apprenti <b>${o.horsApprenti}/${o.total}</b></div>
       <div class="obj"><span class="pastille c2"></span>Objectif 2 : tout acquérir <b>${o.acquis}/${o.total}</b></div>`;
     if (h.length < 2) return `${tete}<p class="aide">La courbe apparaîtra à partir du 2e jour d'utilisation.</p>`;
@@ -348,7 +420,8 @@
     const absents = L.appliquerAbsences(etat, t);
     if (absents) { sauver(); alerte(`${absents} carte(s) redescendue(s) d'un palier après une longue absence.`); }
     const dues = L.revisionsDues(etat, t);
-    const pr = L.prochaineNouvelle(etat, CARTES);
+    const act = cartesActives();
+    const pr = L.prochaineNouvelle(etat, act.cartes);
     const prev = L.simuler(etat, t);
     const b = L.budget(etat, t);
     let sous;
@@ -356,10 +429,11 @@
     else if (pr.carte) sous = "Nouvelles cartes disponibles";
     else { const p = L.prochaineRevision(etat); sous = p ? `Prochaine révision ${duree(p - t)}` : "Rien à faire"; }
     const phases = { kanji: "kanji seuls", combo: "vocabulaire niveau 1", mixte: "vocabulaire niveau 2", fini: "tout est vu" };
-    const vuesKanji = CARTES.filter((c) => c.phase === "kanji" && L.introduite(etat, c.id)).length;
+    const kanjiActifs = act.cartes.filter((c) => c.phase === "kanji");
+    const vuesKanji = kanjiActifs.filter((c) => L.introduite(etat, c.id)).length;
     const dem = prev[1];
     ecran.innerHTML = `
-      <h1><img class="logo-mini" src="nihon-192.png" alt="">Kanji JLPT <span class="sous">N5 · N4</span></h1>
+      <h1><img class="logo-mini" src="nihon-192.png" alt="">Kanji JLPT <span class="sous">${{ N5: "N5", N4: "N4", N5N4: "N5 · N4" }[act.choix]}</span></h1>
       <button class="gros jouer" id="b-jouer">▶ Jouer<span>${sous}</span></button>
       <div class="carte-info">
         <div class="demain">Demain : <b>${Math.round(dem.revisions)} révision${Math.round(dem.revisions) > 1 ? "s" : ""}</b>, environ <b>${dem.revisions < 0.5 ? 0 : Math.max(1, Math.round(dem.minutes))} min</b></div>
@@ -368,7 +442,7 @@
         ${b.adapte ? `Tu tiens environ ${Math.round(b.tenu)} min/jour sur 7 jours : j'adapte les nouvelles cartes.` : ""}</p>
       </div>
       <div class="carte-info">${courbe()}</div>
-      <p class="aide centre">Phase : ${phases[pr.phase]}${pr.phase === "kanji" ? ` (${Math.floor(vuesKanji / 2)}/${FICHES.length} kanji commencés)` : ""}</p>`;
+      <p class="aide centre">Phase : ${phases[pr.phase]}${pr.phase === "kanji" ? ` (${Math.floor(vuesKanji / 2)}/${kanjiActifs.length / 2} kanji commencés)` : ""}</p>`;
     $("#b-jouer").onclick = jouer;
   }
 
@@ -409,11 +483,13 @@
   function groupe(t) { for (const [n, c, fn] of GROUPES) if ((!t || t.statut !== "placee") ? n === "Nouvelles" : (n !== "Nouvelles" && fn(t))) return c; return "g0"; }
   function vueProgres() {
     onglets("progres");
-    const familles = [["Kanji N5", (c) => c.phase === "kanji" && PAR_KANJI[c.id.split(":")[1]].niveau === "N5"],
-      ["Kanji N4", (c) => c.phase === "kanji" && PAR_KANJI[c.id.split(":")[1]].niveau === "N4"],
+    const act = cartesActives();
+    const familles = [["Kanji N5", (c) => c.phase === "kanji" && c.niveau === "N5"],
+      ["Kanji N4", (c) => c.phase === "kanji" && c.niveau === "N4"],
       ["Vocabulaire niveau 1", (c) => c.phase === "combo"], ["Vocabulaire niveau 2", (c) => c.phase === "mixte"]];
     const barres = familles.map(([nom, fn]) => {
-      const ids = CARTES.filter(fn).map((c) => c.id);
+      const ids = act.cartes.filter(fn).map((c) => c.id);
+      if (!ids.length) return "";
       const cpt = {}; for (const id of ids) { const g = groupe(etat.tuiles[id]); cpt[g] = (cpt[g] || 0) + 1; }
       const segs = GROUPES.map(([, c]) => cpt[c] ? `<div class="${c}" style="flex:${cpt[c]}"></div>` : "").join("");
       const acq = cpt.g5 || 0, nouv = cpt.g0 || 0;
@@ -423,10 +499,10 @@
       const m = Math.min(...["sens", "lecture"].map((ty) => { const t = etat.tuiles[`k:${k}:${ty}`]; return t && t.statut === "placee" ? t.palier : 0; }));
       return m === 0 ? "g0" : groupe({ statut: "placee", palier: m });
     };
-    ecran.innerHTML = `<h1>Progrès</h1>${barres}
+    ecran.innerHTML = `<h1>Progrès <span class="sous">${{ N5: "N5", N4: "N4", N5N4: "N5 · N4" }[act.choix]}</span></h1>${barres}
       <div class="legende-g">${GROUPES.map(([n, c]) => `<span class="${c}">${n}</span>`).join("")}</div>
       <h2>Kanji</h2><p class="aide">Couleur = la moins avancée des 2 cartes du kanji. Touche un kanji pour voir sa fiche.</p>
-      <div class="grille">${FICHES.map((f) => `<button class="case ${couleurK(f.kanji)} jp" data-k="${esc(f.kanji)}">${esc(f.kanji)}</button>`).join("")}</div>`;
+      <div class="grille">${FICHES.filter((f) => act.choix.includes(f.niveau)).map((f) => `<button class="case ${couleurK(f.kanji)} jp" data-k="${esc(f.kanji)}">${esc(f.kanji)}</button>`).join("")}</div>`;
     document.querySelectorAll(".case").forEach((b) => b.onclick = () => {
       const k = b.dataset.k;
       const det = ["sens", "lecture"].map((ty) => { const t = etat.tuiles[`k:${k}:${ty}`]; return `${ty} : ${!t || t.statut !== "placee" ? "pas encore vue" : S.NOMS[t.palier] + (t.due ? ", révision " + duree(t.due - maintenant()) : "")}`; }).join("<br>");
@@ -441,35 +517,72 @@
     const t = maintenant();
     const b = L.budget(etat, t);
     const n = etat.profil.reponses.length;
+    const ch = cartesActives().choix;
+    const compte = (k) => { const c = CARTES.filter((x) => k.includes(x.niveau)); return `${c.filter((x) => x.phase === "kanji").length / 2} kanji · ${new Set(c.filter((x) => x.phase !== "kanji").map((x) => x.id.split(":")[1])).size} mots`; };
+    const taux = Math.round(L.tauxReussite(etat) * 100);
     ecran.innerHTML = `<h1>Paramètres</h1>
-      <label class="reglage">Temps de révision visé par jour
-        <select id="s-obj">${[5, 10, 15, 20, 30, 45, 60].map((m) => `<option value="${m}" ${m === b.objectif ? "selected" : ""}>${m} min</option>`).join("")}</select></label>
-      <p class="aide">Jouer propose de nouvelles cartes tant que la prévision des 5 prochains jours reste sous ce temps.</p>
-      <h2>Ce que l'appli sait de toi</h2>
-      <p class="aide">Bonnes réponses en révision : <b>${Math.round(L.tauxReussite(etat) * 100)} %</b> ${n < 30 ? `(estimation de départ à 50 %, ${n} réponse(s) mesurée(s))` : `(sur tes ${Math.min(n, 200)} dernières réponses)`}<br>
-      Temps moyen par carte : <b>${Math.round(L.secondesParCarte(etat))} s</b><br>
-      Temps réellement tenu sur 7 jours : <b>${b.tenu === null ? "pas encore assez de recul" : Math.round(b.tenu) + " min/jour"}</b></p>
-      <h2>Installer sur le téléphone</h2>
-      ${installee() ? `<p class="aide">L'appli est installée : ouvre-la depuis son icône sur l'écran d'accueil.</p>` : `
-      <button class="second" id="b-inst">Installer sur le téléphone</button>
-      <p class="aide" id="p-inst">${invitation ? "Un appui, puis « Installer »." : aideInstallation()}</p>`}
-      <h2>Sauvegarde</h2>
-      <p class="aide">Ta progression est enregistrée sur ce téléphone. Fais une sauvegarde de temps en temps (fichier dans Téléchargements).</p>
-      <button class="second" id="b-sauv">Sauvegarder ma progression</button>
-      <label class="second fichier">Restaurer une sauvegarde<input type="file" id="f-rest" accept=".json,application/json"></label>
-      <button class="second danger" id="b-raz">Tout effacer et recommencer</button>
-      <h2>Règles</h2>
-      <p class="aide">Ordre : les 245 kanji seuls, puis le vocabulaire niveau 1 (mots dont tous les kanji sont à connaître), puis le vocabulaire niveau 2 (furigana sur les kanji hors liste) ; un mot arrive quand ses kanji sont au palier Confirmé 1.
-      Paliers : Apprenti 1 à 4 (4 h, 8 h, 1 j, 2 j), Confirmé 1 et 2 (1 et 2 semaines), Maîtrisé (1 mois), Expert (4 mois), Chrono 30 s, Chrono 12 s (1 mois chacun), Acquis.
-      Erreur : -2 paliers (-1 aux paliers chrono). Absence très longue : -1 palier. Une pause de plus de 30 s sur une question ne compte pas dans ton temps.</p>
-      <h2>Sources</h2>
-      <p class="aide">Kanji, lectures : KANJIDIC2 (EDRDG, licence CC BY-SA 4.0). Listes N5/N4 : tanos.co.uk (J. Waller, CC BY) et ebooks Kanpai. Listes non officielles (pas de liste officielle depuis 2010).</p>`;
+      <section class="panneau">
+        <h2>Objectif</h2>
+        <div class="segments" role="radiogroup">${Object.entries(CHOIX_NIVEAUX).map(([k, nom]) =>
+          `<button class="seg ${k === ch ? "actif" : ""}" data-niv="${k}" role="radio" aria-checked="${k === ch}"><b>${{ N5: "N5", N4: "N4", N5N4: "N5 + N4" }[k]}</b><span>${compte(k)}</span></button>`).join("")}</div>
+        <p class="aide">Les nouvelles cartes, la progression et l'onglet Progrès suivent ton objectif. Si tu le changes, au prochain Jouer je te demande si tu gardes ou retires de tes révisions les cartes commencées qui n'en font plus partie.${ch === "N4" ? " En N4 seul, les kanji N5 sont supposés connus." : ""}</p>
+      </section>
+      <section class="panneau">
+        <h2>Temps par jour</h2>
+        <label class="ligne-reglage">Révision visée
+          <select id="s-obj">${[5, 10, 15, 20, 30, 45, 60].map((m) => `<option value="${m}" ${m === b.objectif ? "selected" : ""}>${m} min</option>`).join("")}</select></label>
+        <p class="aide">Jouer propose de nouvelles cartes tant que les 5 prochains jours restent sous ce temps.</p>
+      </section>
+      <section class="panneau">
+        <h2>Ce que l'appli sait de toi</h2>
+        <div class="tuiles-stat">
+          <div class="stat"><b>${taux} %</b><span>bonnes réponses</span></div>
+          <div class="stat"><b>${Math.round(L.secondesParCarte(etat))} s</b><span>par carte</span></div>
+          <div class="stat"><b>${b.tenu === null ? "–" : Math.round(b.tenu) + "′"}</b><span>tenu / jour</span></div>
+        </div>
+        <p class="aide">${n < 30 ? `Réussite : estimation de départ à 50 % (${n} réponse(s) mesurée(s)).` : `Réussite sur tes ${Math.min(n, 200)} dernières révisions.`} ${b.tenu === null ? "Temps tenu : calculé après 7 jours d'utilisation." : "Temps tenu : moyenne des 7 derniers jours."}</p>
+      </section>
+      ${installee() ? "" : `<section class="panneau">
+        <h2>Installer sur le téléphone</h2>
+        <button class="second" id="b-inst">Installer sur le téléphone</button>
+        <p class="aide" id="p-inst">${invitation ? "Un appui, puis « Installer »." : aideInstallation()}</p>
+      </section>`}
+      <section class="panneau">
+        <h2>Sauvegarde</h2>
+        <p class="aide">Ta progression est enregistrée sur ce téléphone. Fais une sauvegarde de temps en temps (fichier dans Téléchargements).</p>
+        <div class="deux">
+          <button class="second" id="b-sauv">Sauvegarder</button>
+          <label class="second fichier">Restaurer<input type="file" id="f-rest" accept=".json,application/json"></label>
+        </div>
+      </section>
+      <details class="panneau">
+        <summary>Règles de l'appli</summary>
+        <ul class="regles">
+          <li><b>Ordre</b> : les kanji seuls, puis le vocabulaire niveau 1 (tous les kanji du mot sont à connaître), puis le niveau 2 (furigana sur les kanji hors liste). Un mot arrive quand ses kanji sont au palier Confirmé 1.</li>
+          <li><b>Paliers</b> : Apprenti 1 à 4 (4 h, 8 h, 1 j, 2 j), Confirmé 1 et 2 (1 et 2 semaines), Maîtrisé (1 mois), Expert (4 mois), Chrono 30 s, Chrono 12 s (1 mois chacun), Acquis.</li>
+          <li><b>Erreur</b> : -2 paliers (-1 aux paliers chrono). Absence très longue : -1 palier.</li>
+          <li><b>Temps</b> : une pause de plus de 30 s sur une question ne compte pas.</li>
+          <li><b>Objectif atteint</b> : continuer sans impact (seules les cartes notées Bien ou Très bien entrent) ou en mode normal.</li>
+        </ul>
+      </details>
+      <details class="panneau">
+        <summary>Sources</summary>
+        <p class="aide">Kanji, lectures : KANJIDIC2 (EDRDG, licence CC BY-SA 4.0). Listes N5/N4 : tanos.co.uk (J. Waller, CC BY) et ebooks Kanpai. Listes non officielles (pas de liste officielle depuis 2010).</p>
+      </details>
+      <button class="second danger" id="b-raz">Tout effacer et recommencer</button>`;
+    document.querySelectorAll("[data-niv]").forEach((bt) => bt.onclick = () => {
+      if (bt.dataset.niv === cartesActives().choix) return;
+      etat.reglages.niveaux = bt.dataset.niv;
+      L.reprendre(etat, cartesActives().ids, maintenant());     // les cartes en pause qui reviennent dans l'objectif reprennent
+      etat.reglages.demanderObjectif = true; sauver();
+      alerte(`Objectif : ${CHOIX_NIVEAUX[bt.dataset.niv]}`); vueOptions();
+    });
     if ($("#b-inst")) $("#b-inst").onclick = () => {
       if (!invitation) { $("#p-inst").innerHTML = aideInstallation(); alerte("Suis les étapes juste en dessous."); return; }
       invitation.prompt();
       invitation.userChoice.then((c) => { invitation = null; if (c.outcome === "accepted") alerte("Installation en cours…"); vueOptions(); });
     };
-    $("#s-obj").onchange =(e) => { etat.reglages.objectif = +e.target.value; sauver(); alerte(`Objectif : ${e.target.value} min par jour`); };
+    $("#s-obj").onchange =(e) => { etat.reglages.objectif = +e.target.value; sauver(); alerte(`Temps visé : ${e.target.value} min par jour`); };
     $("#b-sauv").onclick = () => {
       const blob = new Blob([JSON.stringify(etat)], { type: "application/json" });
       const a = document.createElement("a");
@@ -483,14 +596,17 @@
       fi.text().then((txt) => {
         const e2 = JSON.parse(txt);
         if (!e2 || !e2.tuiles) throw new Error("format");
-        if (!confirm("Remplacer la progression actuelle par cette sauvegarde ?")) return;
-        etat = L.migrer(e2); sauver(); alerte("Sauvegarde restaurée."); accueil();
+        fenetre("Restaurer cette sauvegarde ?", "Ta progression actuelle sera remplacée par celle du fichier.", [
+          ["Oui, restaurer", "gros", () => { etat = L.migrer(e2); sauver(); alerte("Sauvegarde restaurée."); accueil(); }],
+          ["Annuler", "second", null]]);
       }).catch(() => alerte("Ce fichier n'est pas une sauvegarde valable."));
     };
     $("#b-raz").onclick = () => {
-      if (!confirm("Effacer toute ta progression ?")) return;
-      if (!confirm("Vraiment ? C'est définitif (sauf si tu as une sauvegarde).")) return;
-      etat = L.etatVide(); sauver(); accueil();
+      const n = Object.values(etat.tuiles).filter((t) => t.statut === "placee").length;
+      fenetre("Tout effacer ?", `Toute ta progression sera perdue (<b>${n}</b> carte(s) commencée(s)). C'est définitif, sauf si tu as une sauvegarde.`, [
+        ["Sauvegarder d'abord", "second", () => $("#b-sauv").click()],
+        ["Oui, tout effacer", "second danger", () => { const r = etat.reglages; etat = L.etatVide(); etat.reglages = r; delete r.demanderObjectif; sauver(); alerte("Progression effacée."); accueil(); }],
+        ["Annuler", "gros", null]]);
     };
   }
 

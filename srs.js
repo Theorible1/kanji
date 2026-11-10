@@ -46,21 +46,40 @@ function introduite(etat, id) { const t = etat.tuiles[id]; return !!t && t.statu
 function appliquerAbsences(etat, maintenant) {
   let n = 0;
   for (const t of Object.values(etat.tuiles)) {
-    if (t.statut !== "placee" || t.palier < 1 || t.palier >= SRS.ACQUIS || t.absencePenalisee) continue;
+    if (t.statut !== "placee" || t.pause || t.palier < 1 || t.palier >= SRS.ACQUIS || t.absencePenalisee) continue;
     if (maintenant - t.due > 2 * SRS.INTERVALLE[t.palier]) { t.palier = Math.max(1, t.palier - 1); t.absencePenalisee = true; n++; }
   }
   return n;
 }
 
+// ordre : les cartes les mieux connues d'abord (donc les chrono en premier), puis les plus anciennes
 function revisionsDues(etat, maintenant) {
   return Object.entries(etat.tuiles)
-    .filter(([, t]) => t.statut === "placee" && t.palier >= 1 && t.palier < SRS.ACQUIS && t.due <= maintenant)
-    .sort((a, b) => a[1].due - b[1].due).map(([id]) => id);
+    .filter(([, t]) => t.statut === "placee" && !t.pause && t.palier >= 1 && t.palier < SRS.ACQUIS && t.due <= maintenant)
+    .sort((a, b) => b[1].palier - a[1].palier || a[1].due - b[1].due).map(([id]) => id);
+}
+
+// cartes hors de l'objectif : mises en pause avec leur progression, puis reprises là où elles en étaient
+function pauser(etat, ids, maintenant) {
+  let n = 0;
+  for (const id of ids) {
+    const t = etat.tuiles[id];
+    if (t && t.statut === "placee" && !t.pause && t.palier < SRS.ACQUIS) { t.pause = maintenant; n++; }
+  }
+  return n;
+}
+function reprendre(etat, ids, maintenant) {
+  let n = 0;
+  for (const id of ids) {
+    const t = etat.tuiles[id];
+    if (t && t.pause) { if (t.due !== null) t.due += maintenant - t.pause; delete t.pause; n++; }
+  }
+  return n;
 }
 
 function prochaineRevision(etat) {
   let min = null;
-  for (const t of Object.values(etat.tuiles)) if (t.statut === "placee" && t.palier < SRS.ACQUIS && (min === null || t.due < min)) min = t.due;
+  for (const t of Object.values(etat.tuiles)) if (t.statut === "placee" && !t.pause && t.palier < SRS.ACQUIS && (min === null || t.due < min)) min = t.due;
   return min;
 }
 
@@ -133,7 +152,7 @@ function simuler(etat, maintenant, opts = {}) {
   const sec = opts.secondes || secondesParCarte(etat);
   const alea = opts.alea || Math.random;
   const d0 = debutJour(maintenant), fin = d0 + (jours + 1) * J;
-  const cartes = Object.values(etat.tuiles).filter((t) => t.statut === "placee" && t.palier < SRS.ACQUIS).map((t) => [t.palier, t.due]);
+  const cartes = Object.values(etat.tuiles).filter((t) => t.statut === "placee" && !t.pause && t.palier < SRS.ACQUIS).map((t) => [t.palier, t.due]);
   for (const x of opts.ajouts || []) cartes.push(x);
   const compte = new Array(jours + 1).fill(0);
   for (let n = 0; n < tirages; n++) {
@@ -311,7 +330,7 @@ function qcmLectureMot(mot, tousMots, parKanji, alea = Math.random) {
   return { bonne, options: melanger([bonne, ...[...choix].slice(0, 3)], alea) };
 }
 
-const SRSLib = { SRS, H, J, etatVide, migrer, placer, introduite, appliquerAbsences, revisionsDues, prochaineRevision, repondre,
+const SRSLib = { SRS, H, J, etatVide, migrer, placer, introduite, appliquerAbsences, revisionsDues, pauser, reprendre, prochaineRevision, repondre,
   repondreAcquis, kanjiConfirme, prochaineNouvelle, enregistrerReponse, tauxReussite, secondesParCarte, tempsActif, cleJour, debutJour,
   simuler, tempsTenu, budget, nouvelleSupportable, sansImpact, objectifs, noterHistorique, melanger, pieges, qcmLecture, qcmSens, qcmSensMot, qcmLectureMot };
 if (typeof window !== "undefined") window.SRSLib = SRSLib;
