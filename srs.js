@@ -269,24 +269,28 @@ function tempsTenu(etat, maintenant) {
   return total / 7 / 60;
 }
 
-// ---------- progression vers les 2 objectifs ----------
+// ---------- progression vers les 4 objectifs ----------
+// r2, r5, r6 : nombre de cartes au rang 2, 5, 6 ou plus ; acquis : cartes acquises (rang5 = ancien nom de r5)
 function objectifs(etat, ids) {
-  let rang5 = 0, acquis = 0;
+  let r2 = 0, r5 = 0, r6 = 0, acquis = 0;
   for (const id of ids) {
     const r = rangDe(etat, id);
-    if (r >= SRS.DEBLOCAGE) rang5++;
+    if (r >= 2) r2++;
+    if (r >= SRS.DEBLOCAGE) r5++;
+    if (r >= 6) r6++;
     if (r >= SRS.ACQUIS) acquis++;
   }
-  return { total: ids.length, rang5, acquis };
+  return { total: ids.length, r2, r5, r6, acquis, rang5: r5 };
 }
+// historique d'un jour : [r5, acquis, total, r2, r6] (r2 et r6 ajoutés en v12.2 : absents des jours plus anciens)
 function noterHistorique(etat, ids, maintenant) {
   const o = objectifs(etat, ids);
-  etat.historique[cleJour(maintenant)] = [o.rang5, o.acquis, o.total];
+  etat.historique[cleJour(maintenant)] = [o.r5, o.acquis, o.total, o.r2, o.r6];
 }
 
 // ---------- projection : on rejoue les séances jour par jour avec le rythme réel de l'utilisateur ----------
 // opts : jours (365), minutes (temps par jour : temps tenu sur 7 jours, sinon objectif), graine
-// retour : [[cartes au rang 5 et plus, cartes acquises], ...] pour aujourd'hui (indice 0) puis chaque jour
+// retour : [[cartes au rang 5 et plus, cartes acquises, au rang 2 et plus, au rang 6 et plus], ...] pour aujourd'hui (indice 0) puis chaque jour
 function projeter(etat, cartes, maintenant, opts = {}) {
   const jours = opts.jours || 365;
   const tenu = tempsTenu(etat, maintenant);
@@ -315,7 +319,7 @@ function projeter(etat, cartes, maintenant, opts = {}) {
     return null;
   };
   const ids = cartes.map((c) => c.id);
-  const compter = () => { const o = objectifs(e, ids); return [o.rang5, o.acquis]; };
+  const compter = () => { const o = objectifs(e, ids); return [o.r5, o.acquis, o.r2, o.r6]; };
   const res = [compter()];
   for (let d = 1; d <= jours; d++) {
     const t = plusJours(maintenant, d) + 12 * H;

@@ -88,6 +88,18 @@
   // ---------- thème (repris du dashboard ; défaut = futuriste confort · ardoise, celui de style.css) ----------
   const THEME_DEFAUT = "futur-confort-ardoise";
   const NOMS_THEMES = Object.fromEntries((window.THEMES || []).flatMap(([, ts]) => ts));
+  // choix du thème (Options) : familles et noms courts ; COULEURS_THEMES : [fond, accent] de chaque thème (repris de themes.css) pour sa pastille
+  const FAMILLES_THEMES = [
+    ["Simples", [["auto", "auto"], ["light", "clair"], ["dark", "sombre"]]],
+    ["Confort", [["futur-confort-ardoise", "ardoise"], ["futur-confort-pervenche", "pervenche"], ["futur-confort-ivoire", "ivoire"], ["papier", "papier"], ["penombre", "pénombre"], ["futur-confort", "sombre doux"]]],
+    ["Futuristes", [["futuriste", "néon"], ["futur-ambre", "ambre"], ["futur-vert", "terminal"], ["futur-violet", "violet"]]],
+    ["Fun", [["synthwave", "synthwave"], ["holo", "holo"], ["cyberpunk", "cyberpunk"], ["licorne", "licorne"], ["lcd", "LCD rétro"], ["cartoon", "cartoon"]]],
+  ];
+  const COULEURS_THEMES = { auto: ["linear-gradient(90deg, #f6f6f3 50%, #0d0d0d 50%)", "#3987e5"], light: ["#f6f6f3", "#2a78d6"], dark: ["#0d0d0d", "#3987e5"],
+    "futur-confort-ardoise": ["#16181c", "#7ea3c4"], "futur-confort-pervenche": ["#16181c", "#9a98d0"], "futur-confort-ivoire": ["#16181c", "#b8b09b"],
+    papier: ["#efe6d3", "#2f6db5"], penombre: ["#1b1d21", "#6d9fd6"], "futur-confort": ["#16181c", "#d9b25f"],
+    futuriste: ["#05070f", "#00d8f0"], "futur-ambre": ["#0c0802", "#ffae1f"], "futur-vert": ["#020a04", "#39ff78"], "futur-violet": ["#08040f", "#b66dff"],
+    synthwave: ["#14062a", "#ff5ccd"], holo: ["#eef3f8", "#3a6df0"], cyberpunk: ["#0a0a0a", "#fcee0a"], licorne: ["#fdf2fb", "#b545cf"], lcd: ["#cfc8b8", "#1d2418"], cartoon: ["#fff6dc", "#2f80ed"] };
   const sombre = matchMedia("(prefers-color-scheme: dark)");
   function appliquerTheme() {
     let t = etat.reglages.theme || THEME_DEFAUT;
@@ -164,6 +176,15 @@
   }
   function onglets(actif) { document.querySelectorAll("nav button").forEach((b) => b.classList.toggle("actif", b.dataset.vue === actif)); }
   const minutesObjectif = () => etat.reglages.objectif || S.OBJECTIF_DEFAUT;
+  // les 4 objectifs. cle : compteur de L.objectifs ; k : indice dans une ligne de projection [r5, acquis, r2, r6] ;
+  // h : indice dans l'historique [r5, acquis, total, r2, r6] ; part : part des cartes à atteindre ; c : couleur de sa courbe (1 et 3 seulement)
+  const OBJECTIFS = [
+    { nom: "Tout découvert", regle: "toutes les cartes au rang 2 ou plus", cle: "r2", k: 2, h: 3, part: 1, c: "c1" },
+    { nom: "Prêt pour le combat", regle: "75 % des cartes au rang 5 ou plus", cle: "r5", k: 0, h: 0, part: 0.75 },
+    { nom: "En feu 🔥", regle: "toutes les cartes au rang 6 ou plus", cle: "r6", k: 3, h: 4, part: 1, c: "c2" },
+    { nom: "Maître des kanji", regle: "toutes les cartes acquises", cle: "acquis", k: 1, h: 1, part: 1 },
+  ];
+  const cibleObjectif = (o, tot) => Math.ceil(o.part * tot);
   // temps du jour terminé : temps atteint, ou séance arrêtée juste avant la carte qui l'aurait fait dépasser
   const jourFini = () => L.tempsJour(etat, maintenant()) >= minutesObjectif() * 60 || etat.profil.fini === L.cleJour(maintenant());
 
@@ -467,18 +488,18 @@
 
   // ---------- temps à régler pour atteindre chaque objectif dans 1 an (Paramètres) ----------
   // même simulation que l'estimation de l'accueil, relancée avec plusieurs temps par jour (par pas de 5 min, 12 h max)
+  // un objectif est « atteint en 1 an » s'il l'est au moins un jour de l'année simulée ; calcul lancé seulement à la demande (icône)
   const MAX_CALC = 720;
-  let calculAn = null;                       // { cle, res: { o1, o2, max2 } | null (en cours) }
+  let calculAn = null;                       // { cle, res: [{ minutes | null, max }] | null (en cours) }
   const cleCalculAn = () => `${L.cleJour(maintenant())}|${etat.journal.length}|${cartesActives().choix}`;
   const ecrireMinutes = (m) => (m >= 60 ? `${Math.floor(m / 60)} h${m % 60 ? " " + String(m % 60).padStart(2, "0") : ""}` : `${m} min`);
   function texteCalculAn() {
-    if (!assezDeDonnees()) return "Le temps à régler pour atteindre chaque objectif en 1 an sera calculé après une vingtaine de réponses.";
-    if (!calculAn || calculAn.cle !== cleCalculAn() || !calculAn.res) return "Calcul du temps à régler pour atteindre chaque objectif en 1 an…";
-    const { o1, o2, max2, tot } = calculAn.res;
-    const t1 = o1 ? `régler ≈ <b>${ecrireMinutes(o1)}</b>/jour` : `impossible, même à 12 h/jour`;
-    const t2 = o2 ? `régler ≈ <b>${ecrireMinutes(o2)}</b>/jour`
-      : `impossible, même à 12 h/jour (au mieux ${Math.round((max2 / tot) * 100)} % : il faut ≈ 8 mois sans erreur par carte)`;
-    return `Pour y être dans 1 an (estimation) : objectif 1 ${t1} · objectif 2 ${t2}.`;
+    if (!assezDeDonnees()) return `<span class="calc-titre">Disponible après 20 réponses</span>`;
+    if (!calculAn || calculAn.cle !== cleCalculAn() || !calculAn.res) return `<span class="en-calcul"><i class="tourne"></i>EN CALCUL...</span>`;
+    return `<span class="calc-titre">Temps par jour pour y arriver en 1 an</span>` + OBJECTIFS.map((o, i) => {
+      const r = calculAn.res[i];
+      return `<span class="calc-ligne"><span>${o.nom}</span><span>${r.minutes ? `≈ <b>${ecrireMinutes(r.minutes)}</b>` : `impossible (max ${Math.floor(r.max * 100)} %)`}</span></span>`;
+    }).join("");
   }
   function lancerCalculAn() {
     if (!assezDeDonnees()) return;
@@ -488,19 +509,31 @@
     const act = cartesActives(), tot = act.ids.length, t = maintenant();
     const graine = Math.floor(L.debutJour(t) / L.J);
     const pause = () => new Promise((r) => setTimeout(r, 30));   // laisse l'écran respirer entre deux simulations
-    const dansUnAn = async (m) => { await pause(); const P = L.projeter(etat, act.cartes, t, { minutes: m, graine }); return P[P.length - 1]; };
-    // plus petit temps (multiple de 5 min) qui atteint l'objectif k, sachant qu'il est atteint à MAX_CALC
-    const chercher = async (k) => {
+    // pour un temps par jour donné : le meilleur niveau atteint dans l'année par chaque compteur [r5, acquis, r2, r6] (résultat gardé)
+    const faits = {};
+    const meilleur = async (m) => {
+      if (!faits[m]) {
+        await pause();
+        const P = L.projeter(etat, act.cartes, t, { minutes: m, graine });
+        faits[m] = [0, 1, 2, 3].map((k) => P.reduce((mx, v) => Math.max(mx, v[k]), 0));
+      }
+      return faits[m];
+    };
+    // plus petit temps (multiple de 5 min) qui atteint l'objectif, sachant qu'il est atteint à MAX_CALC
+    const chercher = async (o) => {
       let bas = 0, haut = MAX_CALC / 5;
-      while (haut - bas > 1) { const mil = Math.floor((bas + haut) / 2); if ((await dansUnAn(mil * 5))[k] >= tot) haut = mil; else bas = mil; }
+      while (haut - bas > 1) { const mil = Math.floor((bas + haut) / 2); if ((await meilleur(mil * 5))[o.k] >= cibleObjectif(o, tot)) haut = mil; else bas = mil; }
       return haut * 5;
     };
     (async () => {
-      const max = await dansUnAn(MAX_CALC);
-      const o1 = max[0] >= tot ? await chercher(0) : null;
-      const o2 = max[1] >= tot ? await chercher(1) : null;
+      const max = await meilleur(MAX_CALC);
+      const res = [];
+      for (const o of OBJECTIFS) {
+        const c = cibleObjectif(o, tot);
+        res.push({ minutes: max[o.k] >= c ? await chercher(o) : null, max: Math.min(1, max[o.k] / c) });
+      }
       if (!calculAn || calculAn.cle !== cle) return;
-      calculAn.res = { o1, o2, max2: max[1], tot };
+      calculAn.res = res;
       const p = $("#p-calc");
       if (p) p.innerHTML = texteCalculAn();
     })();
@@ -515,20 +548,24 @@
   function courbe(P) {
     const ids = cartesActives().ids, tot = ids.length;
     const o = L.objectifs(etat, ids);
-    const pc = (v, t) => `${Math.round((v / (t || tot)) * 100)} %`;
     const auj = L.cleJour(maintenant());
-    const h = Object.entries(etat.historique).filter(([c]) => c < auj).sort();
-    h.push([auj, [o.rang5, o.acquis, tot]]);
-    const tete = `<div class="obj"><span class="pastille c1"></span>Objectif 1 : tout au rang 5 ou plus <b>${o.rang5}/${tot}</b></div>
-      <div class="obj"><span class="pastille c2"></span>Objectif 2 : tout acquérir <b>${o.acquis}/${tot}</b></div>`;
-    if (h.length < 2 && !P) return `${tete}<p class="aide">${assezDeDonnees() ? "Calcul de l'estimation…" : "La courbe apparaîtra à partir du 2e jour, et l'estimation de ta progression après une vingtaine de réponses."}</p>`;
+    // jours d'avant la v12.2 : pas de compteurs rang 2 et rang 6, ils ne sont pas tracés
+    const h = Object.entries(etat.historique).filter(([c, v]) => c < auj && v.length >= 5).sort();
+    h.push([auj, [o.r5, o.acquis, tot, o.r2, o.r6]]);
+    const traces = OBJECTIFS.filter((x) => x.c);            // courbes : objectifs 1 et 3
+    // avancement d'un objectif en % (arrondi vers le bas : 100 % seulement s'il est atteint)
+    const pc = (v, x) => `${Math.floor(Math.min(1, v / cibleObjectif(x, tot)) * 100)} %`;
+    const pastille = (x) => `<span class="pastille ${x.c || "vide"}"></span>`;
+    const tete = OBJECTIFS.map((x) => `<div class="obj">${pastille(x)}<span>${x.nom}</span><b>${Math.min(o[x.cle], cibleObjectif(x, tot))}/${cibleObjectif(x, tot)}</b></div>`).join("");
+    if (h.length < 2 && !P) return `${tete}${assezDeDonnees() ? `<p class="aide legende-c">Calcul de l'estimation…</p>` : ""}`;
     const W = 320, Ht = 132, g = 6, d = W - 6, bas = Ht - 20;
     const y = (f) => bas - Math.min(1, f) * (bas - 8);
     const x0 = !P ? d : (h.length >= 2 ? g + 0.34 * (d - g) : g);          // position d'aujourd'hui
     const jour = (c) => new Date(c + "T00:00:00").getTime();
     const t0 = jour(h[0][0]), t1 = jour(auj);
     const xh = (c) => (t1 > t0 ? g + ((jour(c) - t0) / (t1 - t0)) * (x0 - g) : x0);
-    const ligneH = (k) => h.map(([c, v]) => `${xh(c).toFixed(1)},${y(v[k] / v[2]).toFixed(1)}`).join(" ");
+    const ligneH = (x) => h.map(([c, v]) => `${xh(c).toFixed(1)},${y(v[x.h] / v[2]).toFixed(1)}`).join(" ");
+    const legende = `<p class="aide legende-c">Trait plein : ta progression · pointillés : estimation</p>`;
     let prev = "", table = "";
     if (P) {
       // échelle : un tiers de la largeur pour le 1er mois, un tiers jusqu'à 6 mois, un tiers jusqu'à 1 an
@@ -538,19 +575,17 @@
       const ligneP = (k) => jours.map((j) => `${xp(j).toFixed(1)},${y(P[j][k] / tot).toFixed(1)}`).join(" ");
       prev = `<line x1="${x0}" x2="${x0}" y1="6" y2="${bas}" class="rep"/><text x="${x0}" y="${Ht - 6}" text-anchor="${h.length >= 2 ? "middle" : "start"}" class="rep-t">auj.</text>
         ${REPERES.map(([j, nom], i) => `<line x1="${xp(j).toFixed(1)}" x2="${xp(j).toFixed(1)}" y1="6" y2="${bas}" class="rep"/><text x="${xp(j).toFixed(1)}" y="${Ht - 6}" text-anchor="${i === 2 ? "end" : "middle"}" class="rep-t">${nom}</text>`).join("")}
-        <polyline points="${ligneP(0)}" class="c1 est"/><polyline points="${ligneP(1)}" class="c2 est"/>`;
-      const col = (k) => `<td>${pc(P[0][k])}</td>${REPERES.map(([j]) => `<td>${pc(P[Math.min(j, P.length - 1)][k])}</td>`).join("")}`;
+        ${traces.map((x) => `<polyline points="${ligneP(x.k)}" class="${x.c} est"/>`).join("")}`;
+      const col = (x) => `<td>${pc(P[0][x.k], x)}</td>${REPERES.map(([j]) => `<td>${pc(P[Math.min(j, P.length - 1)][x.k], x)}</td>`).join("")}`;
       table = `<table class="proj"><tr><th>Estimation</th><th>auj.</th>${REPERES.map(([, nom]) => `<th>${nom}</th>`).join("")}</tr>
-        <tr><td><span class="pastille c1"></span>Rang 5 et +</td>${col(0)}</tr>
-        <tr><td><span class="pastille c2"></span>Acquis</td>${col(1)}</tr></table>
-        <p class="aide">Trait plein : ta progression réelle. Pointillés : une <b>estimation</b>, calculée d'après ton rythme réel (temps par jour, réussite, vitesse) et refaite chaque jour. Ce n'est pas une garantie.</p>`;
+        ${OBJECTIFS.map((x) => `<tr><td>${pastille(x)}${x.nom}</td>${col(x)}</tr>`).join("")}</table>${legende}`;
     }
     return `${tete}<svg viewBox="0 0 ${W} ${Ht}" class="courbe" role="img" aria-label="Progression réelle et estimation">
       <line x1="${g}" x2="${d}" y1="${y(1)}" y2="${y(1)}" class="but"/><text x="${g + 2}" y="${y(1) + 11}" class="but-t">100 %</text>
       <line x1="${g}" x2="${d}" y1="${y(0)}" y2="${y(0)}" class="axe"/>${prev}
-      <polyline points="${ligneH(0)}" class="c1"/><polyline points="${ligneH(1)}" class="c2"/></svg>
+      ${traces.map((x) => `<polyline points="${ligneH(x)}" class="${x.c}"/>`).join("")}</svg>
       ${P ? table : `<div class="courbe-dates"><span>${h[0][0].slice(5).split("-").reverse().join("/")}</span><span>aujourd'hui</span></div>
-        <p class="aide">${assezDeDonnees() ? "Calcul de l'estimation…" : "L'estimation de ta progression future apparaîtra après une vingtaine de réponses."}</p>`}`;
+        ${assezDeDonnees() ? `<p class="aide legende-c">Calcul de l'estimation…</p>` : ""}`}`;
   }
   function accueil() {
     onglets("accueil");
@@ -566,9 +601,6 @@
     if (fini) sous = "Temps du jour fait ✓ (tu peux continuer en bonus)";
     else if (L.aJouer(etat, t).dues.length || pr.carte) sous = fait >= 0.1 ? `Encore ${Math.ceil(obj - fait)} min aujourd'hui` : `${obj} min aujourd'hui`;
     else { const p = L.prochaineOuverture(etat); sous = p ? `Prochaine carte ${duree(p - t)}` : "Rien à faire"; }
-    const phases = { kanji: "kanji seuls", combo: "vocabulaire niveau 1", mixte: "vocabulaire niveau 2", fini: "tout est vu" };
-    const kanjiActifs = FICHES.filter((f) => act.choix.includes(f.niveau));
-    const commences = kanjiActifs.filter((f) => PROPRES[f.kanji].some((id) => L.introduite(etat, id))).length;
     const cle = cleProjection();
     const P = projection && projection.cle === cle ? projection.points : null;
     ecran.innerHTML = `
@@ -578,8 +610,7 @@
         <div class="tj-texte"><span>Temps du jour</span><b>${fini ? "✓ " : ""}${Math.floor(fait)} / ${obj} min</b></div>
         <div class="tj-barre"><div class="${fini ? "plein" : ""}" style="width:${fini ? 100 : Math.min(100, (fait / obj) * 100).toFixed(0)}%"></div></div>
       </div>
-      <div class="carte-info" id="bloc-courbe">${courbe(P)}</div>
-      <p class="aide centre">Phase : ${phases[pr.phase]}${pr.phase === "kanji" ? ` (${commences}/${kanjiActifs.length} kanji commencés)` : ""}</p>`;
+      <div class="carte-info" id="bloc-courbe">${courbe(P)}</div>`;
     $("#b-jouer").onclick = jouer;
     if (!P && assezDeDonnees()) setTimeout(() => {
       projection = { cle, points: L.projeter(etat, act.cartes, maintenant(), { graine: Math.floor(L.debutJour(maintenant()) / L.J) }) };
@@ -594,7 +625,6 @@
     const ids = IDS.filter((id) => L.rangDe(etat, id) === S.ACQUIS);
     ecran.innerHTML = `<h1>Acquis</h1>
       <p class="info">${ids.length} carte${ids.length > 1 ? "s" : ""} acquise${ids.length > 1 ? "s" : ""}.</p>
-      <p class="aide">Entraîne-toi sur ce que tu as déjà acquis, avec 12 s par question. Une bonne réponse ne change rien. Une erreur fait redescendre la carte au rang 9 (chrono 30 s) : elle revient dans Jouer 30 jours plus tard.</p>
       ${ids.length ? `<button class="gros" id="b-acq">S'entraîner (${Math.min(20, ids.length)} questions)</button>` : ""}`;
     if (!ids.length) return;
     $("#b-acq").onclick = () => {
@@ -654,7 +684,6 @@
       <h2>Cartes</h2>${barres}
       <div class="legende-g">${GROUPES.map(([n, c]) => `<span class="${c}">${n}</span>`).join("")}</div>
       <h2>Maîtrise des kanji <span class="sous">moyenne ${Math.round(moyenne * 100)} %</span></h2>
-      <p class="aide">La couleur d'un kanji compte toutes ses cartes : ses sens, ses prononciations et les mots qui l'utilisent. Touche un kanji pour le détail.</p>
       <div class="legende-g">${MAITRISES.map(([n, c]) => `<span class="${c}">${n}</span>`).join("")}</div>
       <div class="grille">${kanjis.map((f) => `<button class="case ${couleurMaitrise(maitrise(f.kanji))} jp" data-k="${esc(f.kanji)}">${esc(f.kanji)}</button>`).join("")}</div>`;
     document.querySelectorAll(".case").forEach((b) => b.onclick = () => {
@@ -669,8 +698,7 @@
       ecran.innerHTML = `${ficheHTML(`k:${k}:s0`, true)}
         <div class="carte-info"><div class="maitrise"><span>Maîtrise</span><b class="${couleurMaitrise(p)}">${Math.round(p * 100)} %</b></div>
         <ul class="cartes-k">${lignes}
-          <li><span>Mots qui utilisent ce kanji</span><span>${mots.length ? `${vues}/${mots.length} cartes vues, ${moyMots} %` : "aucun"}</span></li></ul>
-        <p class="aide">Une carte vaut son rang sur 11 (0 % si pas encore vue, 100 % si acquise). La maîtrise compte pour moitié les cartes du kanji et pour moitié celles de ses mots.</p></div>
+          <li><span>Mots qui utilisent ce kanji</span><span>${mots.length ? `${vues}/${mots.length} cartes vues, ${moyMots} %` : "aucun"}</span></li></ul></div>
         <button class="gros" id="b-r">Retour</button>`;
       $("#b-r").onclick = vueProgres;
       scrollTo(0, 0);
@@ -686,47 +714,59 @@
     const ch = cartesActives().choix;
     const compte = (k) => `${FICHES.filter((f) => k.includes(f.niveau)).length} kanji · ${MOTS.filter((m) => k.includes(m.niveau)).length} mots`;
     const taux = Math.round(L.tauxReussite(etat) * 100);
-    const td = L.tendance(etat);
-    const types = [["ks", "Kanji → sens"], ["kl", "Kanji → lecture"], ["ms", "Mot → traduction"], ["ml", "Mot → kana"]];
-    const parRang = []; for (let r = 1; r <= 10; r++) { const x = etat.profil.reponses.filter((y) => y[4] === r); if (x.length >= 5) parRang.push(`rang ${r} : ${Math.round((x.reduce((s, y) => s + y[1], 0) / x.length) * 100)} %`); }
+    // stats : jours d'affilée (aujourd'hui compris s'il est joué, sinon jusqu'à hier), temps total, cartes commencées
+    const joue = (i) => (etat.profil.jours[L.cleJour(L.plusJours(t, -i))] || 0) > 0;
+    let serie = 0; for (let i = joue(0) ? 0 : 1; joue(i); i++) serie++;
+    const minTotal = Math.round(Object.values(etat.profil.jours).reduce((s, x) => s + x, 0) / 60);
+    const vues = cartesActives().ids.filter((id) => L.introduite(etat, id)).length;
+    const themeActif = NOMS_THEMES[etat.reglages.theme] ? etat.reglages.theme : THEME_DEFAUT;
+    const tend = L.tendance(etat);
     ecran.innerHTML = `<h1>Paramètres</h1>
       <section class="panneau">
         <h2>Objectif</h2>
         <div class="segments" role="radiogroup">${Object.entries(CHOIX_NIVEAUX).map(([k, nom]) =>
           `<button class="seg ${k === ch ? "actif" : ""}" data-niv="${k}" role="radio" aria-checked="${k === ch}"><b>${{ N5: "N5", N4: "N4", N5N4: "N5 + N4" }[k]}</b><span>${compte(k)}</span></button>`).join("")}</div>
-        <p class="aide">Les nouvelles cartes, la progression et l'onglet Progrès suivent ton objectif. Si tu le changes, au prochain Jouer je te demande si tu gardes ou retires les cartes commencées qui n'en font plus partie.${ch === "N4" ? " En N4 seul, les kanji N5 sont supposés connus." : ""}</p>
       </section>
       <section class="panneau">
         <h2>Temps par jour</h2>
-        <div class="ligne-reglage"><span>Temps visé</span>
+        <div class="ligne-reglage"><span>Temps visé <button class="icone" id="b-calc" aria-label="Temps par jour pour atteindre chaque objectif en 1 an" aria-expanded="false">🎯</button></span>
           <span class="saisie-temps"><input type="number" id="s-obj-h" min="0" max="12" step="1" inputmode="numeric" aria-label="Heures" value="${Math.floor(minutesObjectif() / 60)}"> h
           <input type="number" id="s-obj-m" min="0" max="59" step="1" inputmode="numeric" aria-label="Minutes" value="${minutesObjectif() % 60}"> min</span></div>
-        <p class="aide calc-an" id="p-calc">${texteCalculAn()}</p>
-        <p class="aide">C'est le seul réglage à faire. Jouer choisit les cartes tout seul et s'arrête quand ce temps est atteint ; tu peux alors continuer si tu veux.</p>
+        <div class="calc-an" id="p-calc" hidden></div>
       </section>
       <section class="panneau">
         <h2>Thème</h2>
-        <select id="s-theme" class="choix-theme" aria-label="Thème">${(window.THEMES || []).map(([fam, ts]) => `<optgroup label="${esc(fam)}">${ts.map(([k, nom]) =>
-          `<option value="${k}" ${k === (etat.reglages.theme || THEME_DEFAUT) ? "selected" : ""}>${esc(nom)}</option>`).join("")}</optgroup>`).join("")}</select>
-        <p class="aide">Les thèmes du dashboard SUPERVISOR3000. Le changement est immédiat.</p>
+        ${FAMILLES_THEMES.map(([fam, ts]) => `<div class="th-fam">${fam}</div><div class="th-grille">${ts.map(([k, nom]) => {
+          const [page, accent] = COULEURS_THEMES[k];
+          return `<button class="th ${k === themeActif ? "actif" : ""}" data-th="${k}" aria-pressed="${k === themeActif}"><i style="background:${page};border-color:${accent}"><i style="background:${accent}"></i></i><span>${nom}</span></button>`;
+        }).join("")}</div>`).join("")}
       </section>
       <section class="panneau">
-        <h2>Ce que l'appli sait de toi</h2>
+        <h2>Mes stats</h2>
         <div class="tuiles-stat">
           <div class="stat"><b>${taux} %</b><span>bonnes réponses</span></div>
           <div class="stat"><b>${Math.round(L.secondesParCarte(etat))} s</b><span>par carte</span></div>
           <div class="stat"><b>${tenu === null ? "–" : Math.round(tenu) + "′"}</b><span>tenu / jour</span></div>
+          <div class="stat"><b>${serie}</b><span>jour${serie > 1 ? "s" : ""} d'affilée</span></div>
+          <div class="stat"><b>${minTotal >= 60 ? `${Math.floor(minTotal / 60)} h ${String(minTotal % 60).padStart(2, "0")}` : minTotal + "′"}</b><span>temps total</span></div>
+          <div class="stat"><b>${vues}</b><span>cartes vues</span></div>
         </div>
-        <p class="aide">${n < 30 ? `Réussite : estimation de départ à 50 % (${n} réponse(s) mesurée(s)).` : `Réussite sur tes ${Math.min(n, 200)} dernières cartes revues.`} ${tenu === null ? "Temps tenu : calculé après 7 jours d'utilisation." : "Temps tenu : moyenne des 7 derniers jours."}</p>
-        ${n ? `<p class="aide">Temps par type de carte : ${types.map(([k, nom]) => `${nom} ${Math.round(L.secondesParType(etat, k))} s`).join(" · ")}.</p>` : ""}
-        ${parRang.length ? `<p class="aide">Réussite par rang : ${parRang.join(" · ")}.</p>` : ""}
-        ${td ? `<p class="aide">Tendance (tes ${td.n} dernières réponses contre les ${td.n} d'avant) : réussite ${Math.round(td.taux[0] * 100)} % → <b>${Math.round(td.taux[1] * 100)} %</b>, ${td.secondes[0].toFixed(1)} s → <b>${td.secondes[1].toFixed(1)} s</b> par carte.</p>` : ""}
+        <div class="th-fam st-titre">Temps par type de carte</div>
+        <div class="tuiles-stat t4">${[["ks", "kanji sens"], ["kl", "kanji lecture"], ["ms", "mot sens"], ["ml", "mot lecture"]].map(([ty, nom]) =>
+          `<div class="stat"><b>${etat.profil.reponses.some((x) => x[3] === ty) ? Math.round(L.secondesParType(etat, ty)) + " s" : "–"}</b><span>${nom}</span></div>`).join("")}</div>
+        <div class="th-fam st-titre">Réussite par rang</div>
+        <div class="tuiles-stat t5">${[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((r) =>
+          `<div class="stat"><b>${etat.profil.reponses.some((x) => x[4] === r) ? Math.round(L.tauxParRang(etat, r) * 100) + " %" : "–"}</b><span>rang ${r}</span></div>`).join("")}</div>
+        <div class="th-fam st-titre">Tendance${tend ? ` (${tend.n} dernières réponses)` : ""}</div>
+        <div class="tuiles-stat t2">
+          <div class="stat"><b>${tend ? `${Math.round(tend.taux[0] * 100)} → ${Math.round(tend.taux[1] * 100)} %` : "–"}</b><span>bonnes réponses</span></div>
+          <div class="stat"><b>${tend ? `${Math.round(tend.secondes[0])} → ${Math.round(tend.secondes[1])} s` : "–"}</b><span>par carte</span></div>
+        </div>
       </section>
       <section class="panneau">
         <h2>Mise à jour</h2>
         <p class="ligne-reglage">Version installée <b id="v-inst" class="version">…</b></p>
         <button class="second" id="b-maj">Chercher une mise à jour</button>
-        <p class="aide">L'appli vérifie toute seule à chaque ouverture et te prévient quand une nouvelle version est prête.</p>
       </section>
       ${installee() ? "" : `<section class="panneau">
         <h2>Installer sur le téléphone</h2>
@@ -735,7 +775,6 @@
       </section>`}
       <section class="panneau">
         <h2>Sauvegarde</h2>
-        <p class="aide">Ta progression est enregistrée sur ce téléphone. Fais une sauvegarde de temps en temps (fichier dans Téléchargements).</p>
         <div class="deux">
           <button class="second" id="b-sauv">Sauvegarder</button>
           <label class="second fichier">Restaurer<input type="file" id="f-rest" accept=".json,application/json"></label>
@@ -743,6 +782,13 @@
       </section>
       <details class="panneau">
         <summary>Règles de l'appli</summary>
+        <h3>Accueil</h3>
+        <ul class="regles">
+          <li><b>Les 4 objectifs</b> : ${OBJECTIFS.map((o, i) => `${i + 1}. <b>${o.nom}</b> : ${o.regle}`).join(" ; ")}. Ils comptent toutes les cartes de ton choix N5 / N4 / N5 + N4.</li>
+          <li><b>Courbe</b> : elle montre les objectifs 1 et 3. Trait plein : ta progression réelle, à partir du 2e jour. Pointillés : une estimation à 1 mois, 6 mois et 1 an, calculée d'après ton rythme réel (temps par jour, réussite, vitesse) et refaite chaque jour, à partir d'une vingtaine de réponses. Ce n'est pas une garantie.</li>
+          <li><b>Tableau</b> : l'avancement estimé de chaque objectif (100 % = objectif atteint).</li>
+        </ul>
+        <h3>Jouer</h3>
         <ul class="regles">
           <li><b>Jouer</b> : d'abord les cartes à revoir, de la mieux connue à la moins connue (les cartes chronométrées en premier), puis les nouvelles cartes. La séance s'arrête avant la carte qui ferait dépasser ton temps du jour.</li>
           <li><b>Rangs</b> : chaque carte a un rang de 1 à 10, puis Acquis. Délai avant de la revoir : rangs 1 et 2 : 1 jour, rang 3 : 2 jours, rang 4 : 3 jours, rang 5 : 1 semaine, rang 6 : 2 semaines, rang 7 : 1 mois, rangs 8 et 9 : 80 jours, rang 10 : 1 mois. Les rangs 9 et 10 sont chronométrés (30 s puis 12 s).</li>
@@ -751,6 +797,25 @@
           <li><b>Retard</b> : une carte a quelques jours de marge pour être revue (1 jour aux rangs 1 à 4, 7 à 16 jours ensuite). Passé ce délai, elle descend d'un rang, sans que ce soit compté comme une erreur.</li>
           <li><b>Ordre des nouvelles cartes</b> : les kanji seuls, puis le vocabulaire niveau 1 (tous les kanji du mot sont à connaître), puis le niveau 2 (furigana sur les kanji hors liste), les mots les plus courts d'abord. Un mot arrive quand, pour chacun de ses kanji, le sens et la prononciation utilisée dans le mot sont au rang 5.</li>
           <li><b>Temps</b> : plus d'une minute sur une carte ne compte pas (téléphone posé).</li>
+        </ul>
+        <h3>Progrès</h3>
+        <ul class="regles">
+          <li><b>Maîtrise des kanji</b> : la couleur d'un kanji compte toutes ses cartes : ses sens, ses prononciations et les mots qui l'utilisent. Touche un kanji pour le détail.</li>
+          <li><b>Calcul</b> : une carte vaut son rang sur 11 (0 % si pas encore vue, 100 % si acquise). La maîtrise compte pour moitié les cartes du kanji et pour moitié celles de ses mots.</li>
+        </ul>
+        <h3>Acquis</h3>
+        <ul class="regles">
+          <li><b>Entraînement</b> : tu t'entraînes sur ce que tu as déjà acquis, avec 12 s par question. Une bonne réponse ne change rien. Une erreur fait redescendre la carte au rang 9 (chrono 30 s) : elle revient dans Jouer 30 jours plus tard.</li>
+        </ul>
+        <h3>Options</h3>
+        <ul class="regles">
+          <li><b>Objectif N5 / N4</b> : les nouvelles cartes, la progression et l'onglet Progrès suivent ton choix. Si tu le changes, au prochain Jouer l'appli te demande si tu gardes ou retires les cartes commencées qui n'en font plus partie. En N4 seul, les kanji N5 sont supposés connus.</li>
+          <li><b>Temps par jour</b> : c'est le seul réglage à faire, de 1 min à 12 h. Jouer choisit les cartes tout seul et s'arrête quand ce temps est atteint ; tu peux alors continuer si tu veux.</li>
+          <li><b>Icône 🎯</b> : le temps par jour à régler pour atteindre chaque objectif en 1 an. C'est la même estimation que la courbe, refaite avec plusieurs temps par jour (par pas de 5 min, jusqu'à 12 h) ; le calcul est long. « Impossible » : même 12 h par jour ne suffisent pas, avec le maximum atteignable. Une carte met au moins 248 jours sans erreur pour passer de nouvelle à Acquis : tout acquérir en 1 an est donc impossible.</li>
+          <li><b>Thème</b> : les thèmes du dashboard SUPERVISOR3000. Le changement est immédiat.</li>
+          <li><b>Mes stats</b> : bonnes réponses sur tes 200 dernières cartes revues (50 % au départ, tant qu'il y a moins de 30 réponses) ; secondes par carte ; temps tenu par jour (moyenne des 7 derniers jours, après 7 jours d'utilisation) ; jours joués d'affilée ; temps total passé ; cartes déjà vues. Temps par type de carte : moyenne des 50 dernières cartes de ce type. Réussite par rang : tes 60 dernières réponses à ce rang. Tendance : tes dernières réponses comparées aux précédentes (à partir de 40 réponses).</li>
+          <li><b>Mise à jour</b> : l'appli vérifie toute seule à chaque ouverture et te prévient quand une nouvelle version est prête.</li>
+          <li><b>Sauvegarde</b> : ta progression est enregistrée sur ce téléphone. Fais une sauvegarde de temps en temps (fichier dans Téléchargements).</li>
         </ul>
       </details>
       <details class="panneau">
@@ -776,7 +841,20 @@
     };
     versionInstallee().then((v) => { const el = $("#v-inst"); if (el) el.textContent = v || "inconnue"; });
     $("#b-maj").onclick = () => { $("#b-maj").textContent = "Vérification…"; chercherMaj(true).then(() => { const b = $("#b-maj"); if (b) b.textContent = "Chercher une mise à jour"; }); };
-    $("#s-theme").onchange = (e) => { etat.reglages.theme = e.target.value; sauver(); appliquerTheme(); alerte(`Thème : ${NOMS_THEMES[e.target.value]}`); };
+    document.querySelectorAll("[data-th]").forEach((bt) => bt.onclick = () => {
+      etat.reglages.theme = bt.dataset.th; sauver(); appliquerTheme();
+      document.querySelectorAll("[data-th]").forEach((x) => { const a = x === bt; x.classList.toggle("actif", a); x.setAttribute("aria-pressed", a); });
+      alerte(`Thème : ${bt.textContent}`);
+    });
+    // icône 🎯 : ouvre ou referme le temps à régler pour chaque objectif en 1 an (calcul lancé à la première ouverture)
+    $("#b-calc").onclick = () => {
+      const p = $("#p-calc");
+      p.hidden = !p.hidden;
+      $("#b-calc").setAttribute("aria-expanded", !p.hidden);
+      if (p.hidden) return;
+      lancerCalculAn();
+      p.innerHTML = texteCalculAn();
+    };
     // temps visé saisi librement en heures + minutes (1 min à 12 h)
     const majObjectif = () => {
       const h = Math.max(0, Math.floor(+$("#s-obj-h").value || 0)), m = Math.max(0, Math.floor(+$("#s-obj-m").value || 0));
@@ -788,7 +866,6 @@
       alerte(`Temps visé : ${total >= 60 ? `${Math.floor(total / 60)} h${total % 60 ? " " + (total % 60) + " min" : ""}` : total + " min"} par jour`);
     };
     $("#s-obj-h").onchange = majObjectif; $("#s-obj-m").onchange = majObjectif;
-    lancerCalculAn();
     $("#b-sauv").onclick = () => {
       const blob = new Blob([JSON.stringify(etat)], { type: "application/json" });
       const a = document.createElement("a");
