@@ -212,3 +212,36 @@ details.vraiment summary { color: var(--rouge-ink); }
 .bandeau-maj b { display: block; color: var(--texte); font-size: .92rem; }
 .bandeau-maj button { flex: none; padding: 10px 14px; border: 0; border-radius: var(--rayon); background: var(--accent); color: var(--page); font-weight: 700; }
 .version { font-family: var(--mono); color: var(--accent-ink); }
+
+/* ---------- v12 : temps du jour, estimation, maîtrise des kanji ---------- */
+.t-jour { margin-left: auto; font-family: var(--mono); color: var(--texte-2); white-space: nowrap; }
+.t-jour.fait { color: var(--vert-ink); }
+.t-jour + .quitter { margin-left: 0; }
+/* temps du jour terminé : la croix devient bien visible */
+.quitter.fort { flex: none; width: 40px; height: 40px; padding: 0; border-radius: 50%; background: var(--accent); color: var(--page); font-size: 1.25rem; font-weight: 700;
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--accent) 28%, transparent); }
+.temps-jour .tj-texte { display: flex; justify-content: space-between; align-items: baseline; font-size: .88rem; color: var(--texte-2); text-transform: uppercase; letter-spacing: .06em; }
+.temps-jour .tj-texte b { color: var(--accent-ink); font-size: 1rem; text-transform: none; }
+.tj-barre { height: 10px; margin-top: 8px; background: var(--page); border: 1px solid var(--grille); border-radius: 5px; overflow: hidden; }
+.tj-barre div { height: 100%; background: var(--accent); }
+.tj-barre div.plein { background: var(--vert); }
+.courbe polyline.est { stroke-dasharray: 5 4; opacity: .9; }
+.courbe .rep { stroke: var(--axe); stroke-dasharray: 2 3; }
+.courbe .rep-t { fill: var(--doux); font-size: 9px; font-family: var(--mono); }
+.proj { width: 100%; border-collapse: collapse; margin-top: 8px; font-size: .82rem; }
+.proj th { font-weight: 500; color: var(--doux); font-size: .7rem; text-transform: uppercase; letter-spacing: .05em; text-align: right; padding: 3px 4px; }
+.proj th:first-child, .proj td:first-child { text-align: left; color: var(--texte-2); white-space: nowrap; }
+.proj td { text-align: right; padding: 4px; font-family: var(--mono); border-top: 1px solid var(--grille); }
+.proj td:first-child { font-family: var(--lat); }
+.proj .pastille { margin-right: 6px; }
+h2 .sous { font-size: .72rem; color: var(--doux); font-weight: 500; margin-left: 8px; }
+.m0 { background: var(--grille); color: var(--doux); } .m1 { background: var(--rouge); } .m2 { background: var(--orange); } .m3 { background: var(--vert); } .m4 { background: var(--or); }
+.legende-g span.m0 { color: var(--texte-2); }
+.maitrise { display: flex; justify-content: space-between; align-items: center; text-transform: uppercase; letter-spacing: .06em; font-size: .88rem; color: var(--texte-2); }
+.maitrise b { padding: 3px 10px; border-radius: 2px; color: var(--page); font-size: 1.05rem; } .maitrise b.m0 { color: var(--texte-2); }
+.cartes-k { list-style: none; padding: 0; margin: 10px 0 0; font-size: .88rem; }
+.cartes-k li { display: flex; justify-content: space-between; gap: 10px; padding: 7px 0; border-top: 1px solid var(--grille); }
+.cartes-k li > span:last-child { color: var(--texte-2); text-align: right; }
+.fiche-lect rt { font-size: .55em; color: var(--texte-2); }
+.fiche-lect ruby { ruby-position: over; }
+.fiche-sens .fort, .fiche-lect .fort { display: inline-block; }
