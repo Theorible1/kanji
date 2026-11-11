@@ -465,6 +465,47 @@
     window.__challenge = { go };   // tests
   }
 
+  // ---------- temps à régler pour atteindre chaque objectif dans 1 an (Paramètres) ----------
+  // même simulation que l'estimation de l'accueil, relancée avec plusieurs temps par jour (par pas de 5 min, 12 h max)
+  const MAX_CALC = 720;
+  let calculAn = null;                       // { cle, res: { o1, o2, max2 } | null (en cours) }
+  const cleCalculAn = () => `${L.cleJour(maintenant())}|${etat.journal.length}|${cartesActives().choix}`;
+  const ecrireMinutes = (m) => (m >= 60 ? `${Math.floor(m / 60)} h${m % 60 ? " " + String(m % 60).padStart(2, "0") : ""}` : `${m} min`);
+  function texteCalculAn() {
+    if (!assezDeDonnees()) return "Le temps à régler pour atteindre chaque objectif en 1 an sera calculé après une vingtaine de réponses.";
+    if (!calculAn || calculAn.cle !== cleCalculAn() || !calculAn.res) return "Calcul du temps à régler pour atteindre chaque objectif en 1 an…";
+    const { o1, o2, max2, tot } = calculAn.res;
+    const t1 = o1 ? `régler ≈ <b>${ecrireMinutes(o1)}</b>/jour` : `impossible, même à 12 h/jour`;
+    const t2 = o2 ? `régler ≈ <b>${ecrireMinutes(o2)}</b>/jour`
+      : `impossible, même à 12 h/jour (au mieux ${Math.round((max2 / tot) * 100)} % : il faut ≈ 8 mois sans erreur par carte)`;
+    return `Pour y être dans 1 an (estimation) : objectif 1 ${t1} · objectif 2 ${t2}.`;
+  }
+  function lancerCalculAn() {
+    if (!assezDeDonnees()) return;
+    const cle = cleCalculAn();
+    if (calculAn && calculAn.cle === cle) return;          // déjà calculé (ou en cours) aujourd'hui pour cette progression
+    calculAn = { cle, res: null };
+    const act = cartesActives(), tot = act.ids.length, t = maintenant();
+    const graine = Math.floor(L.debutJour(t) / L.J);
+    const pause = () => new Promise((r) => setTimeout(r, 30));   // laisse l'écran respirer entre deux simulations
+    const dansUnAn = async (m) => { await pause(); const P = L.projeter(etat, act.cartes, t, { minutes: m, graine }); return P[P.length - 1]; };
+    // plus petit temps (multiple de 5 min) qui atteint l'objectif k, sachant qu'il est atteint à MAX_CALC
+    const chercher = async (k) => {
+      let bas = 0, haut = MAX_CALC / 5;
+      while (haut - bas > 1) { const mil = Math.floor((bas + haut) / 2); if ((await dansUnAn(mil * 5))[k] >= tot) haut = mil; else bas = mil; }
+      return haut * 5;
+    };
+    (async () => {
+      const max = await dansUnAn(MAX_CALC);
+      const o1 = max[0] >= tot ? await chercher(0) : null;
+      const o2 = max[1] >= tot ? await chercher(1) : null;
+      if (!calculAn || calculAn.cle !== cle) return;
+      calculAn.res = { o1, o2, max2: max[1], tot };
+      const p = $("#p-calc");
+      if (p) p.innerHTML = texteCalculAn();
+    })();
+  }
+
   // ---------- accueil ----------
   // courbe : progression réelle (trait plein) puis estimation (pointillés) avec repères à 1 mois, 6 mois, 1 an
   const REPERES = [[30, "1 mois"], [182, "6 mois"], [365, "1 an"]];
@@ -657,8 +698,10 @@
       </section>
       <section class="panneau">
         <h2>Temps par jour</h2>
-        <label class="ligne-reglage">Temps visé
-          <select id="s-obj">${[5, 10, 15, 20, 30, 45, 60].map((m) => `<option value="${m}" ${m === minutesObjectif() ? "selected" : ""}>${m} min</option>`).join("")}</select></label>
+        <div class="ligne-reglage"><span>Temps visé</span>
+          <span class="saisie-temps"><input type="number" id="s-obj-h" min="0" max="12" step="1" inputmode="numeric" aria-label="Heures" value="${Math.floor(minutesObjectif() / 60)}"> h
+          <input type="number" id="s-obj-m" min="0" max="59" step="1" inputmode="numeric" aria-label="Minutes" value="${minutesObjectif() % 60}"> min</span></div>
+        <p class="aide calc-an" id="p-calc">${texteCalculAn()}</p>
         <p class="aide">C'est le seul réglage à faire. Jouer choisit les cartes tout seul et s'arrête quand ce temps est atteint ; tu peux alors continuer si tu veux.</p>
       </section>
       <section class="panneau">
@@ -734,7 +777,18 @@
     versionInstallee().then((v) => { const el = $("#v-inst"); if (el) el.textContent = v || "inconnue"; });
     $("#b-maj").onclick = () => { $("#b-maj").textContent = "Vérification…"; chercherMaj(true).then(() => { const b = $("#b-maj"); if (b) b.textContent = "Chercher une mise à jour"; }); };
     $("#s-theme").onchange = (e) => { etat.reglages.theme = e.target.value; sauver(); appliquerTheme(); alerte(`Thème : ${NOMS_THEMES[e.target.value]}`); };
-    $("#s-obj").onchange = (e) => { etat.reglages.objectif = +e.target.value; sauver(); alerte(`Temps visé : ${e.target.value} min par jour`); };
+    // temps visé saisi librement en heures + minutes (1 min à 12 h)
+    const majObjectif = () => {
+      const h = Math.max(0, Math.floor(+$("#s-obj-h").value || 0)), m = Math.max(0, Math.floor(+$("#s-obj-m").value || 0));
+      if (h * 60 + m < 1) return;                          // 0 h 0 min : saisie en cours, on attend l'autre case
+      const total = Math.min(720, h * 60 + m);
+      etat.reglages.objectif = total; sauver();
+      // cases réécrites seulement si la saisie a été corrigée (75 min -> 1 h 15, plus de 12 h, nombre négatif ou à virgule)
+      if (Math.floor(total / 60) !== +$("#s-obj-h").value || total % 60 !== +$("#s-obj-m").value) { $("#s-obj-h").value = Math.floor(total / 60); $("#s-obj-m").value = total % 60; }
+      alerte(`Temps visé : ${total >= 60 ? `${Math.floor(total / 60)} h${total % 60 ? " " + (total % 60) + " min" : ""}` : total + " min"} par jour`);
+    };
+    $("#s-obj-h").onchange = majObjectif; $("#s-obj-m").onchange = majObjectif;
+    lancerCalculAn();
     $("#b-sauv").onclick = () => {
       const blob = new Blob([JSON.stringify(etat)], { type: "application/json" });
       const a = document.createElement("a");
