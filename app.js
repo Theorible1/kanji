@@ -39,16 +39,20 @@
   }
   for (const c of CARTES) if (c.pre) c.prerequis = c.pre.flatMap((g) => g.groupes);
   const IDS = CARTES.map((c) => c.id);
-  // ce qu'on travaille (Paramètres) : "N5", "N4" ou "N5N4". En N4 seul, les kanji N5 sont supposés connus (pas de prérequis).
+  // ce qu'on travaille (Paramètres, cases N5 et N4) : "N5", "N4" ou "N5N4".
+  // Un mot qui mélange kanji N5 et N4 est un mot N4. En N4 seul, un mot N4 n'est jamais bloqué par un kanji N5 :
+  // les kanji N5 utilisés par des mots N4 entrent dans le lot (leurs cartes sont jouées avec le N4), pas le reste du N5.
   const CHOIX_NIVEAUX = { N5: "N5 seulement", N4: "N4 seulement", N5N4: "N5 + N4" };
+  const N5_DU_N4 = new Set(MOTS.filter((m) => m.niveau === "N4").flatMap((m) => m.kanji.filter((k) => PAR_KANJI[k].niveau === "N5")));
   const actifs = {};
   function cartesActives() {
     const ch = (etat && CHOIX_NIVEAUX[etat.reglages.niveaux]) ? etat.reglages.niveaux : "N5N4";
     if (!actifs[ch]) {
-      const ok = (niv) => ch.includes(niv);
-      const cartes = CARTES.filter((c) => ok(c.niveau)).map((c) => Object.assign({}, c,
-        { prerequis: c.pre ? c.pre.filter((g) => ok(PAR_KANJI[g.kanji].niveau)).flatMap((g) => g.groupes) : [] }));
-      actifs[ch] = { choix: ch, cartes, ids: cartes.map((c) => c.id) };
+      const kanjiDans = (k) => ch.includes(PAR_KANJI[k].niveau) || (ch === "N4" && N5_DU_N4.has(k));
+      const cartes = CARTES.filter((c) => (c.phase === "kanji" ? kanjiDans(c.id.split(":")[1]) : ch.includes(c.niveau))).map((c) => Object.assign({}, c,
+        { prerequis: c.pre ? c.pre.filter((g) => kanjiDans(g.kanji)).flatMap((g) => g.groupes) : [] }));
+      const kanji = FICHES.filter((f) => kanjiDans(f.kanji));
+      actifs[ch] = { choix: ch, cartes, ids: cartes.map((c) => c.id), kanji, mots: MOTS.filter((m) => ch.includes(m.niveau)).length };
     }
     return actifs[ch];
   }
@@ -197,13 +201,16 @@
   // objectif du jour (en secondes de travail, calculé d'après les habitudes ; 0 = pas encore d'objectif) et cartes déjà faites aujourd'hui
   const butDuJour = () => L.objectifDuJour(etat, maintenant());
   const cartesDuJour = () => L.cartesDuJour(etat, maintenant());
-  // les 4 objectifs. cle : compteur de L.objectifs ; k : indice dans une ligne de projection [r5, acquis, r2, r6] ;
-  // h : indice dans l'historique [r5, acquis, total, r2, r6] ; part : part des cartes à atteindre ; c : couleur de sa courbe (« En feu » seulement)
+  // les objectifs : les 4 nommés, puis (v14, version d'étude) une ligne par rang. s : rang à atteindre (11 = acquis) ;
+  // part : part des cartes à atteindre ; col : couleur de la pastille et de la courbe.
+  // Toutes les courbes sont affichées pour que Quentin voie comment chacune se comporte ; il choisira ensuite lesquelles garder.
   const OBJECTIFS = [
-    { nom: "Tout découvert", regle: "toutes les cartes au rang 2 ou plus", cle: "r2", k: 2, h: 3, part: 1 },
-    { nom: "Prêt pour le combat", regle: "75 % des cartes au rang 5 ou plus", cle: "r5", k: 0, h: 0, part: 0.75 },
-    { nom: "En feu 🔥", regle: "toutes les cartes au rang 6 ou plus", cle: "r6", k: 3, h: 4, part: 1, c: "c2" },
-    { nom: "Maître des kanji", regle: "toutes les cartes acquises", cle: "acquis", k: 1, h: 1, part: 1 },
+    { nom: "Tout découvert", regle: "toutes les cartes au rang 2 ou plus", s: 2, part: 1, col: "var(--accent)" },
+    { nom: "Prêt pour le combat", regle: "75 % des cartes au rang 5 ou plus", s: 5, part: 0.75, col: "var(--vert)" },
+    { nom: "En feu 🔥", regle: "toutes les cartes au rang 6 ou plus", s: 6, part: 1, col: "var(--or)" },
+    { nom: "Maître des kanji", regle: "toutes les cartes acquises", s: 11, part: 1, col: "var(--rouge)" },
+    ...Array.from({ length: 11 }, (_, i) => ({ nom: i < 10 ? `Rang ${i + 1} ou plus` : "Acquis", regle: i < 10 ? `toutes les cartes au rang ${i + 1} ou plus` : "toutes les cartes acquises",
+      s: i + 1, part: 1, col: `hsl(${210 - i * 21} 62% 56%)`, rang: true })),
   ];
   const cibleObjectif = (o, tot) => Math.ceil(o.part * tot);
   // objectif du jour atteint (le feu d'artifice a déjà été tiré aujourd'hui)
@@ -573,49 +580,99 @@
   // courbe : progression réelle (trait plein) puis estimation (pointillés) avec repères à 1 mois, 6 mois, 1 an
   const REPERES = [[30, "1 mois"], [182, "6 mois"], [365, "1 an"]];
   let projection = null;                     // { cle, points } : recalculée quand le jour ou la progression change
-  const cleProjection = () => `${L.cleJour(maintenant())}|${etat.journal.length}|${cartesActives().choix}`;
+  let reglagesMain = 0;                       // cartes réglées à la main (Progrès) : la projection est refaite
+  const cleProjection = () => `${L.cleJour(maintenant())}|${etat.journal.length}|${cartesActives().choix}|${reglagesMain}`;
   const assezDeDonnees = () => etat.profil.reponses.length >= 20;
-  function courbe(P) {
+  // valeur d'un objectif dans une ligne d'historique (seuils par rang depuis la v14 ; avant, seulement les 4 objectifs nommés)
+  const valeurH = (v, s) => (v.length >= 16 ? v[4 + s] : { 5: v[0], 11: v[1], 2: v[3], 6: v[4] }[s]);
+  const pastille = (x) => `<span class="pastille" style="background:${x.col}"></span>`;
+  // historique (jours passés + aujourd'hui) et nombre de cartes du lot
+  function donneesCourbes() {
     const ids = cartesActives().ids, tot = ids.length;
     const o = L.objectifs(etat, ids);
     const auj = L.cleJour(maintenant());
-    // jours d'avant la v12.2 : pas de compteurs rang 2 et rang 6, ils ne sont pas tracés
-    const h = Object.entries(etat.historique).filter(([c, v]) => c < auj && v.length >= 5).sort();
-    h.push([auj, [o.r5, o.acquis, tot, o.r2, o.r6]]);
-    const traces = OBJECTIFS.filter((x) => x.c);            // courbe : « En feu » seulement
-    // avancement d'un objectif en % (arrondi vers le bas : 100 % seulement s'il est atteint)
-    const pc = (v, x) => `${Math.floor(Math.min(1, v / cibleObjectif(x, tot)) * 100)} %`;
-    const pastille = (x) => `<span class="pastille ${x.c || "vide"}"></span>`;
-    const tete = OBJECTIFS.map((x) => `<div class="obj">${pastille(x)}<span>${x.nom}</span><b>${Math.min(o[x.cle], cibleObjectif(x, tot))}/${cibleObjectif(x, tot)}</b></div>`).join("");
-    if (h.length < 2 && !P) return `${tete}${assezDeDonnees() ? `<p class="aide legende-c">Calcul de l'estimation…</p>` : ""}`;
-    const W = 320, Ht = 132, g = 6, d = W - 6, bas = Ht - 20;
-    const y = (f) => bas - Math.min(1, f) * (bas - 8);
+    const h = Object.entries(etat.historique).filter(([c]) => c < auj).sort();
+    h.push([auj, L.ligneHistorique(o)]);
+    return { o, tot, h, auj };
+  }
+  // courbe d'un objectif : progression réelle (trait plein) puis estimation (pointillés) ; hauteur = avancement vers l'objectif (100 % = atteint)
+  function svgObjectif(x, P, D, W, Ht) {
+    const { h, tot, auj } = D;
+    const g = 6, d = W - 6, bas = Ht - 20;
+    const y = (f) => bas - Math.max(0, Math.min(1, f)) * (bas - 8);
     const x0 = !P ? d : (h.length >= 2 ? g + 0.34 * (d - g) : g);          // position d'aujourd'hui
     const jour = (c) => new Date(c + "T00:00:00").getTime();
     const t0 = jour(h[0][0]), t1 = jour(auj);
     const xh = (c) => (t1 > t0 ? g + ((jour(c) - t0) / (t1 - t0)) * (x0 - g) : x0);
-    const ligneH = (x) => h.map(([c, v]) => `${xh(c).toFixed(1)},${y(v[x.h] / v[2]).toFixed(1)}`).join(" ");
-    const legende = `<p class="aide legende-c">Trait plein : ta progression · pointillés : estimation</p>`;
-    let prev = "", table = "";
+    const pts = h.filter(([, v]) => valeurH(v, x.s) !== undefined).map(([c, v]) => `${xh(c).toFixed(1)},${y(valeurH(v, x.s) / cibleObjectif(x, v[2])).toFixed(1)}`);
+    let prev = "";
     if (P) {
       // échelle : un tiers de la largeur pour le 1er mois, un tiers jusqu'à 6 mois, un tiers jusqu'à 1 an
       const xp = (j) => x0 + (d - x0) * (j <= 30 ? j / 90 : j <= 182 ? 1 / 3 + (j - 30) / 456 : 2 / 3 + (j - 182) / 549);
       const jours = []; for (let j = 0; j < P.length; j += (j < 30 ? 1 : 4)) jours.push(j);
       if (jours[jours.length - 1] !== P.length - 1) jours.push(P.length - 1);
-      const ligneP = (k) => jours.map((j) => `${xp(j).toFixed(1)},${y(P[j][k] / tot).toFixed(1)}`).join(" ");
+      const ligneP = jours.map((j) => `${xp(j).toFixed(1)},${y(P[j][3 + x.s] / cibleObjectif(x, tot)).toFixed(1)}`).join(" ");
       prev = `<line x1="${x0}" x2="${x0}" y1="6" y2="${bas}" class="rep"/><text x="${x0}" y="${Ht - 6}" text-anchor="${h.length >= 2 ? "middle" : "start"}" class="rep-t">auj.</text>
         ${REPERES.map(([j, nom], i) => `<line x1="${xp(j).toFixed(1)}" x2="${xp(j).toFixed(1)}" y1="6" y2="${bas}" class="rep"/><text x="${xp(j).toFixed(1)}" y="${Ht - 6}" text-anchor="${i === 2 ? "end" : "middle"}" class="rep-t">${nom}</text>`).join("")}
-        ${traces.map((x) => `<polyline points="${ligneP(x.k)}" class="${x.c} est"/>`).join("")}`;
-      const col = (x) => `<td>${pc(P[0][x.k], x)}</td>${REPERES.map(([j]) => `<td>${pc(P[Math.min(j, P.length - 1)][x.k], x)}</td>`).join("")}`;
-      table = `<table class="proj"><tr><th>Estimation</th><th>auj.</th>${REPERES.map(([, nom]) => `<th>${nom}</th>`).join("")}</tr>
-        ${OBJECTIFS.map((x) => `<tr><td>${pastille(x)}${x.nom}</td>${col(x)}</tr>`).join("")}</table>${legende}`;
+        <polyline points="${ligneP}" class="est" style="stroke:${x.col}"/>`;
     }
-    return `${tete}<svg viewBox="0 0 ${W} ${Ht}" class="courbe" role="img" aria-label="Progression réelle et estimation">
+    return `<svg viewBox="0 0 ${W} ${Ht}" class="courbe" role="img" aria-label="${esc(x.nom)} : progression réelle et estimation">
       <line x1="${g}" x2="${d}" y1="${y(1)}" y2="${y(1)}" class="but"/><text x="${g + 2}" y="${y(1) + 11}" class="but-t">100 %</text>
       <line x1="${g}" x2="${d}" y1="${y(0)}" y2="${y(0)}" class="axe"/>${prev}
-      ${traces.map((x) => `<polyline points="${ligneH(x)}" class="${x.c}"/>`).join("")}</svg>
-      ${P ? table : `<div class="courbe-dates"><span>${h[0][0].slice(5).split("-").reverse().join("/")}</span><span>aujourd'hui</span></div>
-        ${assezDeDonnees() ? `<p class="aide legende-c">Calcul de l'estimation…</p>` : ""}`}`;
+      ${pts.length >= 2 ? `<polyline points="${pts.join(" ")}" style="stroke:${x.col}"/>` : ""}</svg>`;
+  }
+  function courbe(P) {
+    const D = donneesCourbes(), { o, tot, h } = D;
+    // avancement d'un objectif en % (arrondi vers le bas : 100 % seulement s'il est atteint)
+    const pc = (v, x) => `${Math.floor(Math.min(1, v / cibleObjectif(x, tot)) * 100)} %`;
+    const ligne = (x) => `<div class="obj ${x.rang && x.s === 1 ? "obj-sep" : ""}">${pastille(x)}<span>${x.nom}</span><b>${Math.min(o.seuils[x.s], cibleObjectif(x, tot))}/${cibleObjectif(x, tot)}</b></div>`;
+    const tete = OBJECTIFS.map(ligne).join("");
+    if (h.length < 2 && !P) return `${tete}${assezDeDonnees() ? `<p class="aide legende-c">Calcul de l'estimation…</p>` : ""}`;
+    let table = "";
+    if (P) {
+      const col = (x) => `<td>${pc(P[0][3 + x.s], x)}</td>${REPERES.map(([j]) => `<td>${pc(P[Math.min(j, P.length - 1)][3 + x.s], x)}</td>`).join("")}`;
+      table = `<table class="proj"><tr><th>Estimation</th><th>auj.</th>${REPERES.map(([, nom]) => `<th>${nom}</th>`).join("")}</tr>
+        ${OBJECTIFS.map((x) => `<tr class="${x.rang && x.s === 1 ? "tr-sep" : ""}"><td>${pastille(x)}${x.nom}</td>${col(x)}</tr>`).join("")}</table>`;
+    }
+    const dates = P ? "" : `<div class="courbe-dates"><span>${h[0][0].slice(5).split("-").reverse().join("/")}</span><span>aujourd'hui</span></div>`;
+    const graphes = OBJECTIFS.map((x, i) => `<div class="graphe"><div class="graphe-t">${pastille(x)}<span>${x.nom}</span>
+        <button class="agrandir" data-g="${i}">Agrandir</button></div>${svgObjectif(x, P, D, 320, 110)}${dates}</div>`).join("");
+    return `${tete}${table}<p class="aide legende-c">Trait plein : ta progression · pointillés : estimation</p>
+      ${P ? "" : (assezDeDonnees() ? `<p class="aide legende-c">Calcul de l'estimation…</p>` : "")}
+      <div class="graphes">${graphes}</div>`;
+  }
+  // une courbe en grand, avec zoom (boutons + et −, ou pincement à deux doigts)
+  function agrandir(i) {
+    const x = OBJECTIFS[i], D = donneesCourbes();
+    const P = projection && projection.cle === cleProjection() ? projection.points : null;
+    const f = document.createElement("div");
+    f.className = "zoom";
+    f.innerHTML = `<div class="zoom-tete">${pastille(x)}<span>${x.nom}</span><button class="quitter fort" id="z-fermer" aria-label="Fermer">✕</button></div>
+      <div class="zoom-zone"><div class="zoom-svg">${svgObjectif(x, P, D, 480, 300)}</div></div>
+      <div class="zoom-boutons"><button class="second" id="z-moins" aria-label="Dézoomer">−</button><b id="z-niv">×1</b><button class="second" id="z-plus" aria-label="Zoomer">+</button></div>
+      <p class="aide legende-c">Pince avec deux doigts, ou touche + et −, pour zoomer.</p>`;
+    document.body.appendChild(f);
+    const zone = f.querySelector(".zoom-zone"), cadre = f.querySelector(".zoom-svg");
+    let z = 1;
+    const zoomer = (nz) => {
+      nz = Math.max(1, Math.min(6, nz));
+      // on garde le même point au centre de l'écran
+      const cx = (zone.scrollLeft + zone.clientWidth / 2) / zone.scrollWidth, cy = (zone.scrollTop + zone.clientHeight / 2) / zone.scrollHeight;
+      z = nz;
+      cadre.style.width = `${z * 100}%`;
+      zone.scrollLeft = cx * zone.scrollWidth - zone.clientWidth / 2;
+      zone.scrollTop = cy * zone.scrollHeight - zone.clientHeight / 2;
+      f.querySelector("#z-niv").textContent = `×${Math.round(z * 10) / 10}`;
+    };
+    f.querySelector("#z-plus").onclick = () => zoomer(z * 1.5);
+    f.querySelector("#z-moins").onclick = () => zoomer(z / 1.5);
+    f.querySelector("#z-fermer").onclick = () => f.remove();
+    let pince = null;
+    const ecart = (t) => Math.hypot(t[0].clientX - t[1].clientX, t[0].clientY - t[1].clientY);
+    zone.addEventListener("touchstart", (e) => { if (e.touches.length === 2) pince = { d: ecart(e.touches), z }; }, { passive: true });
+    zone.addEventListener("touchmove", (e) => { if (pince && e.touches.length === 2) { e.preventDefault(); zoomer(pince.z * ecart(e.touches) / pince.d); } }, { passive: false });
+    zone.addEventListener("touchend", (e) => { if (e.touches.length < 2) pince = null; });
+    window.__zoom = { zoomer, niveau: () => z };   // tests
   }
   function accueil() {
     onglets("accueil");
@@ -641,10 +698,12 @@
       </div>
       <div class="carte-info" id="bloc-courbe">${courbe(P)}</div>`;
     $("#b-jouer").onclick = jouer;
+    const boutonsAgrandir = () => document.querySelectorAll("[data-g]").forEach((b) => b.onclick = () => agrandir(+b.dataset.g));
+    boutonsAgrandir();
     if (!P && assezDeDonnees()) setTimeout(() => {
       projection = { cle, points: L.projeter(etat, act.cartes, maintenant(), { graine: Math.floor(L.debutJour(maintenant()) / L.J) }) };
       const bloc = $("#bloc-courbe");
-      if (bloc && cleProjection() === cle) bloc.innerHTML = courbe(projection.points);
+      if (bloc && cleProjection() === cle) { bloc.innerHTML = courbe(projection.points); boutonsAgrandir(); }
     }, 30);
   }
 
@@ -708,7 +767,7 @@
       const acq = cpt.g5 || 0, nouv = cpt.g0 || 0;
       return `<div class="fam"><div class="fam-t"><span>${nom}</span><span>${ids.length - nouv} commencées · ${acq} acquises / ${ids.length}</span></div><div class="pile">${segs}</div></div>`;
     }).join("");
-    const kanjis = FICHES.filter((f) => act.choix.includes(f.niveau));
+    const kanjis = act.kanji;
     const moyenne = kanjis.reduce((s, f) => s + maitrise(f.kanji), 0) / kanjis.length;
     ecran.innerHTML = `<h1>Progrès <span class="sous">${{ N5: "N5", N4: "N4", N5N4: "N5 · N4" }[act.choix]}</span></h1>
       <h2>Cartes</h2>${barres}
@@ -716,23 +775,52 @@
       <h2>Maîtrise des kanji <span class="sous">moyenne ${Math.round(moyenne * 100)} %</span></h2>
       <div class="legende-g">${MAITRISES.map(([n, c]) => `<span class="${c}">${n}</span>`).join("")}</div>
       <div class="grille">${kanjis.map((f) => `<button class="case ${couleurMaitrise(maitrise(f.kanji))} jp" data-k="${esc(f.kanji)}">${esc(f.kanji)}</button>`).join("")}</div>`;
-    document.querySelectorAll(".case").forEach((b) => b.onclick = () => {
-      const k = b.dataset.k, p = maitrise(k);
-      const lignes = PROPRES[k].map((id) => {
-        const x = info(id);
-        return `<li><span>${x.type === "sens" ? `Sens « ${esc(x.fiche.sensCartes[x.idx])} »` : `Lecture <span class="jp">${esc(L.reponseLecture(x.lecture))}</span>`}</span><span>${etatCarte(id)}</span></li>`;
-      }).join("");
-      const mots = [...new Set(DES_MOTS[k].filter((m) => act.choix.includes(m.niveau)).flatMap((m) => m.ids))];
-      const vues = mots.filter((id) => L.introduite(etat, id)).length;
-      const moyMots = mots.length ? Math.round((mots.reduce((s, id) => s + L.rangDe(etat, id) / S.ACQUIS, 0) / mots.length) * 100) : 0;
-      ecran.innerHTML = `${ficheHTML(`k:${k}:s0`, true)}
-        <div class="carte-info"><div class="maitrise"><span>Maîtrise</span><b class="${couleurMaitrise(p)}">${Math.round(p * 100)} %</b></div>
-        <ul class="cartes-k">${lignes}
-          <li><span>Mots qui utilisent ce kanji</span><span>${mots.length ? `${vues}/${mots.length} cartes vues, ${moyMots} %` : "aucun"}</span></li></ul></div>
-        <button class="gros" id="b-r">Retour</button>`;
+    document.querySelectorAll(".case").forEach((b) => b.onclick = () => ficheKanji(b.dataset.k));
+  }
+  // page d'un kanji : maîtrise, rang de chaque carte ; « Modifier les cartes » permet de régler chaque carte à la main
+  const NOMS_REGLAGE = ["Jamais vue", ...Array.from({ length: 10 }, (_, i) => `Rang ${i + 1}`), "Acquis"];
+  function ficheKanji(k, modif) {
+    const act = cartesActives(), p = maitrise(k);
+    const nomCarteK = (x) => (x.type === "sens" ? `Sens « ${esc(x.fiche.sensCartes[x.idx])} »` : `Lecture <span class="jp">${esc(L.reponseLecture(x.lecture))}</span>`);
+    const nomCarteM = (x) => `<span class="jp">${esc(x.cle)}</span> · ${x.type === "sens" ? "sens" : "lecture"}`;
+    const selecteur = (id) => `<select class="regler" data-id="${esc(id)}" aria-label="Rang de la carte">${NOMS_REGLAGE.map((n, r) => `<option value="${r}" ${L.rangDe(etat, id) === r ? "selected" : ""}>${n}</option>`).join("")}</select>`;
+    const lignes = PROPRES[k].map((id) => `<li><span>${nomCarteK(info(id))}</span>${modif ? selecteur(id) : `<span>${etatCarte(id)}</span>`}</li>`).join("");
+    // cartes des mots qui utilisent ce kanji (niveaux cochés) : réglables aussi dans « Modifier les cartes »
+    const mots = [...new Set(DES_MOTS[k].filter((m) => act.choix.includes(m.niveau)).flatMap((m) => m.ids))];
+    const lignesMots = modif ? mots.filter((id) => !PROPRES[k].includes(id)).map((id) => `<li><span>${nomCarteM(info(id))}</span>${selecteur(id)}</li>`).join("") : "";
+    const vues = mots.filter((id) => L.introduite(etat, id)).length;
+    const moyMots = mots.length ? Math.round((mots.reduce((s, id) => s + L.rangDe(etat, id) / S.ACQUIS, 0) / mots.length) * 100) : 0;
+    ecran.innerHTML = `${ficheHTML(`k:${k}:s0`, true)}
+      <div class="carte-info"><div class="maitrise"><span>Maîtrise</span><b class="${couleurMaitrise(p)}">${Math.round(p * 100)} %</b></div>
+      <ul class="cartes-k">${lignes}
+        <li><span>Mots qui utilisent ce kanji</span><span>${mots.length ? `${vues}/${mots.length} cartes vues, ${moyMots} %` : "aucun"}</span></li></ul>
+      ${lignesMots ? `<h2>Cartes des mots</h2><ul class="cartes-k cartes-mots">${lignesMots}</ul>` : ""}</div>
+      ${modif ? `<p class="info">Choisis le rang de chaque carte, celles du kanji comme celles de ses mots. Elle repart d'aujourd'hui, et ce réglage ne compte ni dans ton objectif du jour, ni dans ta réussite.</p>
+        <button class="second" id="b-annuler" ${modif.change ? "" : "disabled"}>Annuler les changements</button>
+        <button class="gros" id="b-termine">Terminé</button>`
+      : `<button class="second" id="b-modif">Modifier les cartes</button>
+        <button class="gros" id="b-r">Retour</button>`}`;
+    if (!modif) {
       $("#b-r").onclick = vueProgres;
+      // état des cartes à l'entrée : pour « Annuler les changements » tant qu'on n'a pas quitté la page
+      $("#b-modif").onclick = () => ficheKanji(k, { avant: [...PROPRES[k], ...mots].map((id) => [id, etat.tuiles[id] ? Object.assign({}, etat.tuiles[id]) : null]), change: false });
       scrollTo(0, 0);
+      return;
+    }
+    document.querySelectorAll("select.regler").forEach((sel) => sel.onchange = () => {
+      L.regler(etat, sel.dataset.id, +sel.value, maintenant());
+      reglagesMain++; sauver();
+      modif.change = true;
+      ficheKanji(k, modif);
     });
+    $("#b-annuler").onclick = () => {
+      for (const [id, t] of modif.avant) { if (t) etat.tuiles[id] = Object.assign({}, t); else delete etat.tuiles[id]; }
+      reglagesMain++; sauver();
+      modif.change = false;
+      alerte("Changements annulés.");
+      ficheKanji(k, modif);
+    };
+    $("#b-termine").onclick = () => ficheKanji(k);
   }
 
   // ---------- Paramètres ----------
@@ -742,7 +830,8 @@
     const tenu = L.tempsTenu(etat, t);
     const n = etat.profil.reponses.length;
     const ch = cartesActives().choix;
-    const compte = (k) => `${FICHES.filter((f) => k.includes(f.niveau)).length} kanji · ${MOTS.filter((m) => k.includes(m.niveau)).length} mots`;
+    const compte = (k) => `${FICHES.filter((f) => f.niveau === k).length} kanji · ${MOTS.filter((m) => m.niveau === k).length} mots`;
+    const act = cartesActives(), integres = act.kanji.filter((f) => f.niveau === "N5").length;
     const taux = Math.round(L.tauxReussite(etat) * 100);
     // stats : jours d'affilée (aujourd'hui compris s'il est joué, sinon jusqu'à hier), temps total, cartes commencées
     const joue = (i) => (etat.profil.jours[L.cleJour(L.plusJours(t, -i))] || 0) > 0;
@@ -754,8 +843,10 @@
     ecran.innerHTML = `<h1>Paramètres</h1>
       <section class="panneau">
         <h2>Objectif</h2>
-        <div class="segments" role="radiogroup">${Object.entries(CHOIX_NIVEAUX).map(([k, nom]) =>
-          `<button class="seg ${k === ch ? "actif" : ""}" data-niv="${k}" role="radio" aria-checked="${k === ch}"><b>${{ N5: "N5", N4: "N4", N5N4: "N5 + N4" }[k]}</b><span>${compte(k)}</span></button>`).join("")}</div>
+        <div class="niveaux">${["N5", "N4"].map((k) =>
+          `<label class="seg niv ${ch.includes(k) ? "actif" : ""}"><input type="checkbox" data-niv="${k}" ${ch.includes(k) ? "checked" : ""}><b>${k}</b><span>${compte(k)}</span></label>`).join("")}</div>
+        <p class="ligne-reglage lot">Tu travailles : <b>${act.kanji.length} kanji · ${act.mots} mots · ${act.ids.length} cartes</b>${ch === "N4" && integres
+          ? `<span>dont ${integres} kanji N5 utilisés par les mots N4</span>` : ""}</p>
       </section>
       <details class="panneau" id="d-theme">
         <summary>Thème</summary>
@@ -807,10 +898,10 @@
         <summary>Règles de l'appli</summary>
         <h3>Accueil</h3>
         <ul class="regles">
-          <li><b>Les 4 objectifs</b> : ${OBJECTIFS.map((o, i) => `${i + 1}. <b>${o.nom}</b> : ${o.regle}`).join(" ; ")}. Ils comptent toutes les cartes de ton choix N5 / N4 / N5 + N4.</li>
+          <li><b>Les 4 objectifs</b> : ${OBJECTIFS.filter((o) => !o.rang).map((o, i) => `${i + 1}. <b>${o.nom}</b> : ${o.regle}`).join(" ; ")}. En dessous, une ligne par rang : les cartes au rang 1 ou plus, au rang 2 ou plus… jusqu'aux cartes acquises. Tout compte les cartes des niveaux que tu as cochés.</li>
           <li><b>Aujourd'hui</b> : le nombre de cartes faites et le temps passé.</li>
-          <li><b>Courbe</b> : elle montre l'objectif « En feu 🔥 ». Trait plein : ta progression réelle, à partir du 2e jour. Pointillés : une estimation à 1 mois, 6 mois et 1 an, calculée d'après ton rythme réel (temps par jour, réussite, vitesse) et refaite chaque jour, à partir d'une vingtaine de réponses. Ce n'est pas une garantie.</li>
-          <li><b>Tableau</b> : l'avancement estimé de chaque objectif (100 % = objectif atteint).</li>
+          <li><b>Courbes</b> : une par ligne, de la couleur de sa pastille ; sa hauteur est l'avancement vers l'objectif (100 % = atteint). Trait plein : ta progression réelle, à partir du 2e jour. Pointillés : une estimation à 1 mois, 6 mois et 1 an, calculée d'après ton rythme réel (temps par jour, réussite, vitesse) et refaite chaque jour, à partir d'une vingtaine de réponses. Ce n'est pas une garantie. « Agrandir » ouvre la courbe en grand : pince avec deux doigts ou touche + et − pour zoomer.</li>
+          <li><b>Tableau</b> : l'avancement estimé de chaque ligne (100 % = objectif atteint).</li>
         </ul>
         <h3>Jouer</h3>
         <ul class="regles">
@@ -829,6 +920,7 @@
         <ul class="regles">
           <li><b>Maîtrise des kanji</b> : la couleur d'un kanji compte toutes ses cartes : ses sens, ses prononciations et les mots qui l'utilisent. Touche un kanji pour le détail.</li>
           <li><b>Calcul</b> : une carte vaut son rang sur 11 (0 % si pas encore vue, 100 % si acquise). La maîtrise compte pour moitié les cartes du kanji et pour moitié celles de ses mots.</li>
+          <li><b>Modifier les cartes</b> : sur la page d'un kanji, tu peux régler à la main chacune de ses cartes et chacune des cartes des mots qui l'utilisent (niveaux cochés), de « Jamais vue » à « Acquis ». Une carte de mot partagée par plusieurs kanji change pour tous. La carte repart d'aujourd'hui ; ce réglage ne compte ni dans ton objectif du jour, ni dans ta réussite. « Annuler les changements » remet les cartes comme elles étaient tant que tu n'as pas quitté la page. Une carte de kanji mise au rang 5 ou plus peut débloquer des mots.</li>
         </ul>
         <h3>Acquis</h3>
         <ul class="regles">
@@ -836,7 +928,7 @@
         </ul>
         <h3>Options</h3>
         <ul class="regles">
-          <li><b>Objectif N5 / N4</b> : les nouvelles cartes, la progression et l'onglet Progrès suivent ton choix. Si tu le changes, au prochain Jouer l'appli te demande si tu gardes ou retires les cartes commencées qui n'en font plus partie. En N4 seul, les kanji N5 sont supposés connus.</li>
+          <li><b>Objectif N5 / N4</b> : coche les niveaux que tu travailles (au moins un). Les nouvelles cartes, la progression et l'onglet Progrès suivent ton choix. Si tu le changes, au prochain Jouer l'appli te demande si tu gardes ou retires les cartes commencées qui n'en font plus partie. Un mot qui contient un kanji N4 est un mot N4. En N4 seul, les kanji N5 utilisés par des mots N4 sont ajoutés à tes cartes, pour qu'aucun mot ne reste bloqué.</li>
           <li><b>Thème</b> : les thèmes du dashboard SUPERVISOR3000. Le changement est immédiat.</li>
           <li><b>Mes stats</b> : bonnes réponses sur tes 200 dernières cartes revues (50 % au départ, tant qu'il y a moins de 30 réponses) ; secondes par carte ; temps tenu par jour (moyenne des 7 derniers jours, après 7 jours d'utilisation) ; jours joués d'affilée ; temps total passé ; cartes déjà vues. Temps par type de carte : moyenne des 50 dernières cartes de ce type. Réussite par rang : tes 60 dernières réponses à ce rang. Tendance : tes dernières réponses comparées aux précédentes (à partir de 40 réponses).</li>
           <li><b>Mise à jour</b> : l'appli vérifie toute seule à chaque ouverture et te prévient quand une nouvelle version est prête.</li>
@@ -852,12 +944,13 @@
         <p class="aide">Efface toute ta progression pour repartir de zéro (tes réglages sont gardés).</p>
         <button class="second danger" id="b-raz">Tout effacer et recommencer</button>
       </details>`;
-    document.querySelectorAll("[data-niv]").forEach((bt) => bt.onclick = () => {
-      if (bt.dataset.niv === cartesActives().choix) return;
-      etat.reglages.niveaux = bt.dataset.niv;
+    document.querySelectorAll("[data-niv]").forEach((cb) => cb.onchange = () => {
+      const choix = ["N5", "N4"].filter((k) => document.querySelector(`[data-niv=${k}]`).checked).join("");
+      if (!choix) { cb.checked = true; alerte("Garde au moins un niveau coché."); return; }
+      etat.reglages.niveaux = choix;
       L.reprendre(etat, cartesActives().ids, maintenant());     // les cartes en pause qui reviennent dans l'objectif reprennent
       etat.reglages.demanderObjectif = true; sauver();
-      alerte(`Objectif : ${CHOIX_NIVEAUX[bt.dataset.niv]}`); vueOptions();
+      alerte(`Objectif : ${CHOIX_NIVEAUX[choix]}`); vueOptions();
     });
     if ($("#b-inst")) $("#b-inst").onclick = () => {
       if (!invitation) { $("#p-inst").innerHTML = aideInstallation(); alerte("Suis les étapes juste en dessous."); return; }
@@ -915,7 +1008,7 @@
   // ---------- navigation ----------
   const VUES = { accueil, progres: vueProgres, acquis: vueAcquis, options: vueOptions };
   document.querySelectorAll("nav button").forEach((b) => b.onclick = () => { clearInterval(minuteur); VUES[b.dataset.vue](); });
-  window.__app = { accueil, etat: () => etat, recharger: () => { projection = null; charger(); appliquerTheme(); accueil(); }, CARTES, ALIAS, maitrise, info,
+  window.__app = { accueil, etat: () => etat, recharger: () => { projection = null; charger(); appliquerTheme(); accueil(); }, CARTES, ALIAS, maitrise, info, cartesActives, N5_DU_N4, OBJECTIFS, DES_MOTS, PROPRES,
     projection: () => projection };   // tests
   accueil();
   // ---------- mises à jour : la nouvelle version s'installe en fond, l'utilisateur redémarre quand il veut ----------

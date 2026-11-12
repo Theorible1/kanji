@@ -15,11 +15,6 @@ try { var t = localStorage.getItem("kanjiApp.theme"); if (t === "auto") t = matc
   if (t && t !== "futur-confort-ardoise") document.documentElement.setAttribute("data-theme", t); } catch (e) {}</script>
 </head>
 <body>
-<div id="intro" aria-hidden="true"><img src="chargement.gif" alt=""></div>
-<script>/* animation de lancement : 1,9 s, un toucher la passe */
-(function () { var d = document.getElementById("intro"), fini = false;
-  function fin() { if (fini) return; fini = true; d.classList.add("part"); setTimeout(function () { d.remove(); }, 300); }
-  d.addEventListener("pointerdown", fin); setTimeout(fin, 1900); })();</script>
 <main id="ecran"></main>
 <nav>
   <button data-vue="accueil">🏠<span>Accueil</span></button>

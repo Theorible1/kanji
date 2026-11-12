@@ -364,26 +364,30 @@ function objectifDuJour(etat, maintenant) {
 
 // ---------- progression vers les 4 objectifs ----------
 // r2, r5, r6 : nombre de cartes au rang 2, 5, 6 ou plus ; acquis : cartes acquises (rang5 = ancien nom de r5)
+// seuils[k] (k = 1 à 11) : nombre de cartes au rang k ou plus (v14 : une ligne par rang)
 function objectifs(etat, ids) {
-  let r2 = 0, r5 = 0, r6 = 0, acquis = 0;
-  for (const id of ids) {
-    const r = rangDe(etat, id);
-    if (r >= 2) r2++;
-    if (r >= SRS.DEBLOCAGE) r5++;
-    if (r >= 6) r6++;
-    if (r >= SRS.ACQUIS) acquis++;
-  }
-  return { total: ids.length, r2, r5, r6, acquis, rang5: r5 };
+  const seuils = new Array(SRS.ACQUIS + 1).fill(0);
+  for (const id of ids) { const r = rangDe(etat, id); for (let k = 1; k <= r; k++) seuils[k]++; }
+  const r2 = seuils[2], r5 = seuils[SRS.DEBLOCAGE], r6 = seuils[6], acquis = seuils[SRS.ACQUIS];
+  return { total: ids.length, r2, r5, r6, acquis, rang5: r5, seuils };
 }
-// historique d'un jour : [r5, acquis, total, r2, r6] (r2 et r6 ajoutés en v12.2 : absents des jours plus anciens)
+// ligne d'historique d'un jour : [r5, acquis, total, r2, r6, rang 1 ou plus, ..., rang 11 (acquis) ou plus]
+// (r2 et r6 ajoutés en v12.2, les seuils par rang en v14 : absents des jours plus anciens ; seuil k à l'indice 4 + k)
+function ligneHistorique(o) { return [o.r5, o.acquis, o.total, o.r2, o.r6, ...o.seuils.slice(1)]; }
 function noterHistorique(etat, ids, maintenant) {
-  const o = objectifs(etat, ids);
-  etat.historique[cleJour(maintenant)] = [o.r5, o.acquis, o.total, o.r2, o.r6];
+  etat.historique[cleJour(maintenant)] = ligneHistorique(objectifs(etat, ids));
+}
+// réglage à la main d'une carte (Progrès, « Modifier les cartes ») : rang 0 = jamais vue, 1 à 10, 11 = acquis.
+// Point de départ : aujourd'hui. Rien dans le journal : ne compte ni dans l'objectif du jour, ni dans la réussite.
+function regler(etat, id, rang, maintenant) {
+  if (!rang) delete etat.tuiles[id];
+  else etat.tuiles[id] = { rang, base: maintenant };
 }
 
 // ---------- projection : on rejoue les séances jour par jour avec le rythme réel de l'utilisateur ----------
 // opts : jours (365), minutes (temps par jour : le temps habituel de la personne), graine
-// retour : [[cartes au rang 5 et plus, cartes acquises, au rang 2 et plus, au rang 6 et plus], ...] pour aujourd'hui (indice 0) puis chaque jour
+// retour : [[cartes au rang 5 et plus, cartes acquises, au rang 2 et plus, au rang 6 et plus, au rang 1 et plus, ..., au rang 11 et plus], ...]
+// pour aujourd'hui (indice 0) puis chaque jour ; cartes au rang k ou plus à l'indice 3 + k
 function projeter(etat, cartes, maintenant, opts = {}) {
   const jours = opts.jours || 365;
   const minutes = opts.minutes !== undefined ? opts.minutes : tempsHabituel(etat, maintenant);
@@ -411,7 +415,7 @@ function projeter(etat, cartes, maintenant, opts = {}) {
     return null;
   };
   const ids = cartes.map((c) => c.id);
-  const compter = () => { const o = objectifs(e, ids); return [o.r5, o.acquis, o.r2, o.r6]; };
+  const compter = () => { const o = objectifs(e, ids); return [o.r5, o.acquis, o.r2, o.r6, ...o.seuils.slice(1)]; };
   const res = [compter()];
   for (let d = 1; d <= jours; d++) {
     const t = plusJours(maintenant, d) + 12 * H;
@@ -577,6 +581,6 @@ function qcmLectureMot(mot, tousMots, parKanji, alea = Math.random) {
 const SRSLib = { SRS, H, J, nomRang, cleJour, debutJour, plusJours, marges, fenetre, etatVide, migrer, rangDe, introduite, placer, repondre,
   repondreAcquis, appliquerRetards, aJouer, aAvancer, prochaineOuverture, pauser, reprendre, debloquee, prochaineNouvelle,
   typeCarte, enregistrerReponse, ajouterTemps, tempsJour, tauxReussite, tauxParRang, secondesParCarte, secondesParType, estimation, tempsActif,
-  tendance, tempsTenu, tempsHabituel, cartesParJour, cartesDuJour, effortParJour, effortDuJour, coutCarte, calculerObjectif, objectifDuJour, prochaineLointaine, ramener, objectifs, noterHistorique, projeter, melanger, decoupe, affichageLecture, reponseLecture, pieges, filtreSens,
+  tendance, tempsTenu, tempsHabituel, cartesParJour, cartesDuJour, effortParJour, effortDuJour, coutCarte, calculerObjectif, objectifDuJour, prochaineLointaine, ramener, objectifs, ligneHistorique, regler, noterHistorique, projeter, melanger, decoupe, affichageLecture, reponseLecture, pieges, filtreSens,
   qcmLecture, qcmSens, qcmSensMot, qcmLectureMot };
 if (typeof window !== "undefined") window.SRSLib = SRSLib;
