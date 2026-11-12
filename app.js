@@ -416,16 +416,22 @@
       session.reste = 0;
       if (!session.bonus && but > 0) {
         // temps habituel atteint : on propose 5 cartes de plus (profil.encore = [jour, nombre de cartes à atteindre])
-        let enc = etat.profil.encore;
-        if ((!enc || enc[0] !== auj) && L.effortDuJour(etat, t) >= but) { enc = etat.profil.encore = [auj, fait + S.BUT_RAB]; sauver(); }
-        if (enc && enc[0] === auj) {
-          // les 5 cartes sont faites : feu d'artifice (une seule fois par jour)
-          if (fait >= enc[1]) return finObjectif();
-          session.reste = enc[1] - fait;   // compte à rebours
-        }
+        // les 5 cartes sont faites : feu d'artifice (une seule fois par jour)
+        const enc = etat.profil.encore;
+        if (enc && enc[0] === auj && fait >= enc[1]) return finObjectif();
       }
       const c = choisir(t);
       if (c.genre === "rien") return finJeu(c.pr);
+      if (!session.bonus && but > 0) {
+        let enc = etat.profil.encore;
+        if (!enc || enc[0] !== auj) {
+          // prévision : la carte qui arrive (on connaît son rang, donc le travail qu'elle demande) est-elle celle
+          // où l'objectif sera atteint ? Oui si l'objectif tombe avant le milieu de cette carte.
+          const prevu = c.genre === "rattrapage" ? 0 : L.coutCarte(etat, c.id);
+          if (L.effortDuJour(etat, t) + prevu / 2 >= but) { enc = etat.profil.encore = [auj, fait + S.BUT_RAB]; sauver(); }
+        }
+        if (enc && enc[0] === auj) session.reste = enc[1] - fait;   // compte à rebours
+      }
       if (c.genre === "rattrapage") { session.rattrapage.shift(); return rattraper(c.id); }
       if (c.genre === "revision") {
         const chronos = c.dues.filter((id) => S.CHRONO[etat.tuiles[id].rang]);

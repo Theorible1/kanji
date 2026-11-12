@@ -313,14 +313,21 @@ function cartesDuJour(etat, maintenant) { return cartesParJour(etat)[cleJour(mai
 // - le temps réellement passé à réviser ;
 // - le temps que les cartes jouées prennent d'habitude : temps moyen du type de carte, alourdi par le taux d'erreur
 //   de la personne au rang de la carte (une erreur coûte un rattrapage, comme dans la projection).
-function effortParJour(etat) {
-  const taux = { 0: tauxReussite(etat) }, sec = {}, prevu = {}, e = {};
+// renvoie la fonction (id, rang) -> secondes que cette carte devrait prendre à ce rang (rang 0 = nouvelle carte)
+function couts(etat) {
+  const taux = { 0: tauxReussite(etat) }, sec = {};
   for (let r = 1; r <= 10; r++) taux[r] = tauxParRang(etat, r);
   for (const ty of ["ks", "kl", "ms", "ml"]) sec[ty] = secondesParType(etat, ty);
+  return (id, rang) => (sec[typeCarte(id)] || sec.ks) * (2 - (taux[rang] !== undefined ? taux[rang] : taux[0]));
+}
+// travail que la prochaine carte devrait demander : sert à prévoir sur quelle carte l'objectif du jour sera atteint
+function coutCarte(etat, id) { return couts(etat)(id, rangDe(etat, id)); }
+function effortParJour(etat) {
+  const cout = couts(etat), prevu = {}, e = {};
   for (const x of etat.journal) {
     if (x[5]) continue;
-    const j = cleJour(x[0]), tx = taux[x[3]] !== undefined ? taux[x[3]] : taux[0];
-    prevu[j] = (prevu[j] || 0) + (sec[typeCarte(x[1])] || sec.ks) * (2 - tx);
+    const j = cleJour(x[0]);
+    prevu[j] = (prevu[j] || 0) + cout(x[1], x[3]);
   }
   for (const j of Object.keys(prevu)) { const reel = etat.profil.jours[j] || 0; e[j] = reel > 0 ? (reel + prevu[j]) / 2 : prevu[j]; }
   return e;
@@ -570,6 +577,6 @@ function qcmLectureMot(mot, tousMots, parKanji, alea = Math.random) {
 const SRSLib = { SRS, H, J, nomRang, cleJour, debutJour, plusJours, marges, fenetre, etatVide, migrer, rangDe, introduite, placer, repondre,
   repondreAcquis, appliquerRetards, aJouer, aAvancer, prochaineOuverture, pauser, reprendre, debloquee, prochaineNouvelle,
   typeCarte, enregistrerReponse, ajouterTemps, tempsJour, tauxReussite, tauxParRang, secondesParCarte, secondesParType, estimation, tempsActif,
-  tendance, tempsTenu, tempsHabituel, cartesParJour, cartesDuJour, effortParJour, effortDuJour, calculerObjectif, objectifDuJour, prochaineLointaine, ramener, objectifs, noterHistorique, projeter, melanger, decoupe, affichageLecture, reponseLecture, pieges, filtreSens,
+  tendance, tempsTenu, tempsHabituel, cartesParJour, cartesDuJour, effortParJour, effortDuJour, coutCarte, calculerObjectif, objectifDuJour, prochaineLointaine, ramener, objectifs, noterHistorique, projeter, melanger, decoupe, affichageLecture, reponseLecture, pieges, filtreSens,
   qcmLecture, qcmSens, qcmSensMot, qcmLectureMot };
 if (typeof window !== "undefined") window.SRSLib = SRSLib;
