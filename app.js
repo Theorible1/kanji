@@ -194,7 +194,7 @@
       <ul class="fiche-ex">${comp}</ul></div>`;
   }
   function onglets(actif) { document.querySelectorAll("nav button").forEach((b) => b.classList.toggle("actif", b.dataset.vue === actif)); }
-  // objectif du jour (en cartes, calculé d'après les habitudes ; 0 = pas encore d'objectif) et cartes déjà faites aujourd'hui
+  // objectif du jour (en secondes de travail, calculé d'après les habitudes ; 0 = pas encore d'objectif) et cartes déjà faites aujourd'hui
   const butDuJour = () => L.objectifDuJour(etat, maintenant());
   const cartesDuJour = () => L.cartesDuJour(etat, maintenant());
   // les 4 objectifs. cle : compteur de L.objectifs ; k : indice dans une ligne de projection [r5, acquis, r2, r6] ;
@@ -207,7 +207,8 @@
   ];
   const cibleObjectif = (o, tot) => Math.ceil(o.part * tot);
   // objectif du jour atteint (le feu d'artifice a déjà été tiré aujourd'hui)
-  const jourFini = () => etat.profil.fini === L.cleJour(maintenant());
+  const jourFini = () => { const j = L.cleJour(maintenant()); return !!(etat.profil.atteints || {})[j] || etat.profil.fini === j; };
+  const atteindre = () => { (etat.profil.atteints || (etat.profil.atteints = {}))[L.cleJour(maintenant())] = 1; sauver(); };
 
   // ---------- chronométrage du temps actif ----------
   let cache = 0, debutCache = null;
@@ -411,14 +412,20 @@
       return { genre: "rien", pr };
     };
     const suivante = () => {
-      const t = maintenant();
-      const but = butDuJour(), fait = cartesDuJour();
-      // objectif du jour atteint : feu d'artifice (une seule fois par jour)
-      if (!session.bonus && but > 0 && fait >= but) return finObjectif();
+      const t = maintenant(), auj = L.cleJour(t), but = butDuJour(), fait = cartesDuJour();
+      session.reste = 0;
+      if (!session.bonus && but > 0) {
+        // temps habituel atteint : on propose 5 cartes de plus (profil.encore = [jour, nombre de cartes à atteindre])
+        let enc = etat.profil.encore;
+        if ((!enc || enc[0] !== auj) && L.effortDuJour(etat, t) >= but) { enc = etat.profil.encore = [auj, fait + S.BUT_RAB]; sauver(); }
+        if (enc && enc[0] === auj) {
+          // les 5 cartes sont faites : feu d'artifice (une seule fois par jour)
+          if (fait >= enc[1]) return finObjectif();
+          session.reste = enc[1] - fait;   // compte à rebours
+        }
+      }
       const c = choisir(t);
       if (c.genre === "rien") return finJeu(c.pr);
-      // compte à rebours des 5 dernières cartes avant l'objectif
-      session.reste = !session.bonus && but > 0 && but - fait <= 5 ? but - fait : 0;
       if (c.genre === "rattrapage") { session.rattrapage.shift(); return rattraper(c.id); }
       if (c.genre === "revision") {
         const chronos = c.dues.filter((id) => S.CHRONO[etat.tuiles[id].rang]);
@@ -489,7 +496,7 @@
     const bilan = () => `${session.faites} carte${session.faites > 1 ? "s" : ""} revue${session.faites > 1 ? "s" : ""} et ${session.nouvelles} nouvelle${session.nouvelles > 1 ? "s" : ""} dans cette séance.`;
     // objectif du jour atteint : feu d'artifice, puis Continuer ou Arrêter (la séance continue alors jusqu'à la croix)
     const finObjectif = () => {
-      etat.profil.fini = L.cleJour(maintenant()); sauver();
+      atteindre();
       feuDArtifice("Objectif du jour atteint !", () => {
         ecran.innerHTML = `<div class="retour ok">Objectif atteint 🎉</div>
           <p class="info">${bilan()}</p>
@@ -500,9 +507,8 @@
       });
     };
     const finJeu = (pr) => {
-      // plus de carte avant l'objectif : il est ramené à ce qui a été fait (ce n'est pas un objectif raté)
-      const auj = L.cleJour(maintenant()), fait = cartesDuJour();
-      if (!session.bonus && fait > 0 && butDuJour() > fait) { etat.profil.buts[auj] = fait; etat.profil.fini = auj; sauver(); }
+      // plus de carte avant l'objectif : ce n'est pas un objectif raté, la journée compte comme réussie
+      if (!session.bonus && cartesDuJour() > 0 && butDuJour() > 0 && !jourFini()) atteindre();
       const prochaine = L.prochaineOuverture(etat);
       const msg = pr.phase === "fini" ? "Toutes les cartes ont été vues. Bravo !"
         : `Les prochains mots se débloquent quand les cartes de leurs kanji sont au rang 5 (${pr.attente} carte(s) en attente).`;
@@ -613,7 +619,7 @@
     if (retards) { sauver(); alerte(`${retards} carte${retards > 1 ? "s" : ""} redescendue${retards > 1 ? "s" : ""} d'un rang (pas vue${retards > 1 ? "s" : ""} à temps).`); }
     const act = cartesActives();
     const pr = L.prochaineNouvelle(etat, act.cartes);
-    const but = butDuJour(), nb = cartesDuJour(), min = Math.floor(L.tempsJour(etat, t) / 60);
+    const nb = cartesDuJour(), min = Math.floor(L.tempsJour(etat, t) / 60);
     let sous;
     const fini = jourFini();
     if (fini) sous = "Objectif du jour atteint ✓ (continue si tu veux)";
@@ -626,7 +632,6 @@
       <button class="gros jouer" id="b-jouer">▶ Jouer<span>${sous}</span></button>
       <div class="carte-info temps-jour">
         <div class="tj-texte"><span>Aujourd'hui</span><b>${fini ? "✓ " : ""}${nb} carte${nb > 1 ? "s" : ""} · ${min} min</b></div>
-        ${fini || but > 0 ? `<div class="tj-barre"><div class="${fini ? "plein" : ""}" style="width:${fini ? 100 : Math.min(100, (nb / but) * 100).toFixed(0)}%"></div></div>` : ""}
       </div>
       <div class="carte-info" id="bloc-courbe">${courbe(P)}</div>`;
     $("#b-jouer").onclick = jouer;
@@ -797,7 +802,7 @@
         <h3>Accueil</h3>
         <ul class="regles">
           <li><b>Les 4 objectifs</b> : ${OBJECTIFS.map((o, i) => `${i + 1}. <b>${o.nom}</b> : ${o.regle}`).join(" ; ")}. Ils comptent toutes les cartes de ton choix N5 / N4 / N5 + N4.</li>
-          <li><b>Aujourd'hui</b> : le nombre de cartes faites et le temps passé. La barre avance vers ton objectif du jour.</li>
+          <li><b>Aujourd'hui</b> : le nombre de cartes faites et le temps passé.</li>
           <li><b>Courbe</b> : elle montre l'objectif « En feu 🔥 ». Trait plein : ta progression réelle, à partir du 2e jour. Pointillés : une estimation à 1 mois, 6 mois et 1 an, calculée d'après ton rythme réel (temps par jour, réussite, vitesse) et refaite chaque jour, à partir d'une vingtaine de réponses. Ce n'est pas une garantie.</li>
           <li><b>Tableau</b> : l'avancement estimé de chaque objectif (100 % = objectif atteint).</li>
         </ul>

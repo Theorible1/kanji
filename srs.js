@@ -16,8 +16,8 @@ const SRS = {
   PAUSE_MAX: 60,                             // s : au-delà, on considère que le téléphone a été posé
   OBJECTIF_DEFAUT: 10,                       // min par jour supposées tant qu'on ne connaît pas le rythme de la personne
   ECHECS_MAX: 3,                             // erreurs de suite au rang 1 avant de mettre la carte de côté (elle revient à la fin)
-  BUT_PART: 0.85,                            // objectif du jour = 85 % du nombre de cartes habituel
-  BUT_MIN: 5,                                // objectif du jour : jamais moins de 5 cartes
+  BUT_PART: 0.85,                            // objectif du jour = 85 % du temps habituel
+  BUT_RAB: 5,                                // cartes proposées en plus quand ce temps est atteint (« Encore 5 avant l'objectif »)
   BUT_JOURS: 7,                              // jours joués pris en compte
 };
 // intervalles de la version 2 (v11), pour retrouver la date de la dernière réponse à la migration
@@ -48,7 +48,7 @@ function fenetre(t) {
   return { ouvre: plusJours(t.base, delai - av), due: plusJours(t.base, delai), limite };
 }
 
-function etatVide() { return { version: 3, tuiles: {}, journal: [], profil: { reponses: [], jours: {}, buts: {} }, historique: {}, reglages: {} }; }
+function etatVide() { return { version: 3, tuiles: {}, journal: [], profil: { reponses: [], jours: {}, cibles: {}, atteints: {} }, historique: {}, reglages: {} }; }
 
 // plan(id, version) -> ids des cartes actuelles qui reprennent la progression de l'ancienne carte « id »
 function migrer(e, plan, maintenant) {
@@ -299,9 +299,9 @@ function tempsHabituel(etat, maintenant) {
   return v.length ? v.reduce((a, b) => a + b, 0) / v.length / 60 : SRS.OBJECTIF_DEFAUT;
 }
 
-// ---------- objectif du jour automatique (v13) ----------
-// On ne demande plus de temps par jour : on regarde combien de cartes la personne fait avant de s'arrêter,
-// et on lui propose un objectif un peu en dessous de son habitude, pour qu'elle l'atteigne presque toujours.
+// ---------- objectif du jour automatique (v13.1) ----------
+// On ne demande plus de temps par jour : on regarde quand la personne s'arrête d'habitude, et on fixe un objectif
+// de temps un peu en dessous. Quand il est atteint, on propose 5 cartes de plus, puis le feu d'artifice.
 // cartes jouées par jour (révisions et nouvelles cartes de Jouer ; ni les « à revoir », ni l'onglet Acquis), d'après le journal
 function cartesParJour(etat) {
   const n = {};
@@ -309,32 +309,50 @@ function cartesParJour(etat) {
   return n;
 }
 function cartesDuJour(etat, maintenant) { return cartesParJour(etat)[cleJour(maintenant)] || 0; }
-// objectif (en cartes) calculé pour aujourd'hui ; 0 = pas encore d'objectif (premier jour : on observe)
+// travail d'une journée, en secondes. Pour plus de fiabilité, on fait la moyenne de deux mesures :
+// - le temps réellement passé à réviser ;
+// - le temps que les cartes jouées prennent d'habitude : temps moyen du type de carte, alourdi par le taux d'erreur
+//   de la personne au rang de la carte (une erreur coûte un rattrapage, comme dans la projection).
+function effortParJour(etat) {
+  const taux = { 0: tauxReussite(etat) }, sec = {}, prevu = {}, e = {};
+  for (let r = 1; r <= 10; r++) taux[r] = tauxParRang(etat, r);
+  for (const ty of ["ks", "kl", "ms", "ml"]) sec[ty] = secondesParType(etat, ty);
+  for (const x of etat.journal) {
+    if (x[5]) continue;
+    const j = cleJour(x[0]), tx = taux[x[3]] !== undefined ? taux[x[3]] : taux[0];
+    prevu[j] = (prevu[j] || 0) + (sec[typeCarte(x[1])] || sec.ks) * (2 - tx);
+  }
+  for (const j of Object.keys(prevu)) { const reel = etat.profil.jours[j] || 0; e[j] = reel > 0 ? (reel + prevu[j]) / 2 : prevu[j]; }
+  return e;
+}
+function effortDuJour(etat, maintenant) { return effortParJour(etat)[cleJour(maintenant)] || 0; }
+// objectif (en secondes de travail) calculé pour aujourd'hui ; 0 = pas encore d'objectif (premier jour : on observe)
 // - 85 % de la moyenne des 7 derniers jours joués (les plus récents comptent plus)
-// - objectif raté la dernière fois : pas plus que ce qui a été fait ce jour-là
+// - objectif raté la dernière fois : il est proposé plus tôt (ce qui a été fait ce jour-là, moins la place des 5 cartes en plus)
 // - pas joué hier : encore 20 % de moins
 function calculerObjectif(etat, maintenant) {
-  const auj = cleJour(maintenant), n = cartesParJour(etat), buts = etat.profil.buts || {};
-  const joues = Object.keys(n).filter((j) => j < auj).sort().slice(-SRS.BUT_JOURS);
+  const auj = cleJour(maintenant), e = effortParJour(etat), n = cartesParJour(etat), p = etat.profil;
+  const joues = Object.keys(e).filter((j) => j < auj).sort().slice(-SRS.BUT_JOURS);
   if (!joues.length) return 0;
   let somme = 0, poids = 0;
-  joues.forEach((j, i) => { somme += n[j] * (i + 1); poids += i + 1; });
+  joues.forEach((j, i) => { somme += e[j] * (i + 1); poids += i + 1; });
   let but = SRS.BUT_PART * somme / poids;
   const dernier = joues[joues.length - 1];
-  if (buts[dernier] && n[dernier] < buts[dernier]) but = Math.min(but, n[dernier]);
+  if ((p.cibles || {})[dernier] > 0 && !(p.atteints || {})[dernier]) but = Math.min(but, e[dernier] - SRS.BUT_RAB * e[dernier] / n[dernier]);
   if (dernier !== cleJour(plusJours(maintenant, -1))) but *= 0.8;
-  return Math.max(SRS.BUT_MIN, Math.round(but));
+  return Math.max(1, Math.round(but));
 }
-// objectif du jour : calculé une fois, puis gardé toute la journée (profil.buts ; on garde 60 jours)
+// objectif du jour : calculé une fois, puis gardé toute la journée (profil.cibles ; on garde 60 jours)
 function objectifDuJour(etat, maintenant) {
   const p = etat.profil, auj = cleJour(maintenant);
-  if (!p.buts) p.buts = {};
-  if (p.buts[auj] === undefined) {
-    p.buts[auj] = calculerObjectif(etat, maintenant);
-    const cles = Object.keys(p.buts).sort();
-    for (const c of cles.slice(0, Math.max(0, cles.length - 60))) delete p.buts[c];
+  if (!p.cibles) p.cibles = {};
+  if (!p.atteints) p.atteints = {};
+  if (p.cibles[auj] === undefined) {
+    p.cibles[auj] = calculerObjectif(etat, maintenant);
+    const cles = Object.keys(p.cibles).sort();
+    for (const c of cles.slice(0, Math.max(0, cles.length - 60))) { delete p.cibles[c]; delete p.atteints[c]; }
   }
-  return p.buts[auj];
+  return p.cibles[auj];
 }
 
 // ---------- progression vers les 4 objectifs ----------
@@ -552,6 +570,6 @@ function qcmLectureMot(mot, tousMots, parKanji, alea = Math.random) {
 const SRSLib = { SRS, H, J, nomRang, cleJour, debutJour, plusJours, marges, fenetre, etatVide, migrer, rangDe, introduite, placer, repondre,
   repondreAcquis, appliquerRetards, aJouer, aAvancer, prochaineOuverture, pauser, reprendre, debloquee, prochaineNouvelle,
   typeCarte, enregistrerReponse, ajouterTemps, tempsJour, tauxReussite, tauxParRang, secondesParCarte, secondesParType, estimation, tempsActif,
-  tendance, tempsTenu, tempsHabituel, cartesParJour, cartesDuJour, calculerObjectif, objectifDuJour, prochaineLointaine, ramener, objectifs, noterHistorique, projeter, melanger, decoupe, affichageLecture, reponseLecture, pieges, filtreSens,
+  tendance, tempsTenu, tempsHabituel, cartesParJour, cartesDuJour, effortParJour, effortDuJour, calculerObjectif, objectifDuJour, prochaineLointaine, ramener, objectifs, noterHistorique, projeter, melanger, decoupe, affichageLecture, reponseLecture, pieges, filtreSens,
   qcmLecture, qcmSens, qcmSensMot, qcmLectureMot };
 if (typeof window !== "undefined") window.SRSLib = SRSLib;
