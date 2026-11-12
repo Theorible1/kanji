@@ -280,3 +280,34 @@ h2 .sous { font-size: .72rem; color: var(--doux); font-weight: 500; margin-left:
 .fiche-lect rt { font-size: .55em; color: var(--texte-2); }
 .fiche-lect ruby { ruby-position: over; }
 .fiche-sens .fort, .fiche-lect .fort { display: inline-block; }
+
+/* ---------- v13 : objectif du jour automatique, récompenses, missclick ---------- */
+/* la croix et l'en-tête des questions descendent sous la barre de l'heure du téléphone */
+main { padding-top: calc(16px + env(safe-area-inset-top)); }
+.q-tete { margin-top: 22px; min-height: 40px; }
+.quitter { font-size: 1.35rem; padding: 8px 4px 8px 14px; }
+/* les messages s'affichent en bas : ils ne cachent plus la croix ni le kanji, et laissent passer les appuis */
+.toast { top: auto; bottom: calc(78px + env(safe-area-inset-bottom)); pointer-events: none; text-align: center; }
+/* compte à rebours des 5 dernières cartes avant l'objectif */
+.encore { width: max-content; max-width: 100%; margin: 10px auto 0; padding: 5px 14px; border-radius: 999px; border: 1px solid var(--or); color: var(--or);
+  background: color-mix(in srgb, var(--or) 12%, transparent); font-size: .82rem; text-transform: uppercase; letter-spacing: .08em; animation: ch-entree .35s cubic-bezier(.2, 1.6, .4, 1) both; }
+.encore b { font-size: 1.05rem; }
+/* « J'ai missclick » : petit, mais facile à toucher */
+.missclick { margin: 0 auto 6px; padding: 12px 16px; font-size: .82rem; }
+/* exemples qui utilisent la prononciation demandée */
+.fiche-ex li.fort { padding: 8px 6px; margin: 2px 0; }
+/* bonne réponse : éclair sur les côtés (vert, ou doré selon le thème) */
+:root { --flash: var(--vert); }
+:root[data-flash-or] { --flash: var(--or); }
+.flash { position: fixed; inset: 0; z-index: 22; pointer-events: none; animation: flash .6s ease-out both;
+  background: linear-gradient(90deg, color-mix(in srgb, var(--flash) 75%, transparent), transparent 16%, transparent 84%, color-mix(in srgb, var(--flash) 75%, transparent));
+  box-shadow: inset 0 0 26px color-mix(in srgb, var(--flash) 60%, transparent); }
+@keyframes flash { 0% { opacity: 0; } 18% { opacity: 1; } 45% { opacity: .35; } 62% { opacity: .8; } 100% { opacity: 0; } }
+/* petite explosion au milieu de l'écran */
+.boum { position: fixed; inset: 0; z-index: 23; display: flex; align-items: center; justify-content: center; background: color-mix(in srgb, var(--page) 55%, transparent); animation: ch-fondu .15s both; }
+.boum-centre { position: relative; display: flex; align-items: center; justify-content: center; }
+.boum-centre i { position: absolute; left: 50%; top: 50%; width: 12px; height: 12px; margin: -6px; border-radius: 50%; animation: boum-eclat .9s cubic-bezier(.1, .7, .3, 1) both; }
+.boum-msg { position: relative; display: flex; flex-direction: column; gap: 6px; padding: 14px 22px; text-align: center; background: var(--surface-2); border: 2px solid var(--or); border-radius: 14px;
+  color: var(--texte); font-size: 1.3rem; font-weight: 800; letter-spacing: .04em; box-shadow: 0 0 30px color-mix(in srgb, var(--or) 45%, transparent); animation: ch-entree .4s cubic-bezier(.2, 1.7, .4, 1) both; max-width: 86vw; }
+@keyframes boum-eclat { 0% { transform: rotate(var(--a)) translateY(0) scale(1.3); opacity: 1; } 65% { opacity: 1; } 100% { transform: rotate(var(--a)) translateY(calc(-1 * var(--d))) scale(.55); opacity: 0; } }
+@media (prefers-reduced-motion: reduce) { .flash, .boum-centre i { animation-duration: .01s; } }

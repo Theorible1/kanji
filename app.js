@@ -108,6 +108,8 @@
     if (t === "auto") t = sombre.matches ? "dark" : "light";
     if (t === THEME_DEFAUT) document.documentElement.removeAttribute("data-theme");
     else document.documentElement.setAttribute("data-theme", t);
+    // éclair des bonnes réponses : doré dans les thèmes où le vert ne ressort pas, vert ailleurs
+    document.documentElement.toggleAttribute("data-flash-or", ["futur-confort", "futur-confort-ivoire", "futur-ambre", "futur-vert", "cyberpunk", "lcd"].includes(t));
     const meta = document.querySelector('meta[name="theme-color"]');
     if (meta) meta.content = getComputedStyle(document.documentElement).getPropertyValue("--page").trim() || "#16181c";
   }
@@ -150,12 +152,29 @@
     const d = L.decoupe(l);
     return `${d.avant ? `(${esc(d.avant)})` : ""}<ruby>${esc(k)}<rt>${esc(d.rad)}</rt></ruby>${esc(d.okuri)}`;
   }
+  // l'exemple utilise-t-il cette prononciation du kanji ? (sons modifiés compris : ひ -> び ou ぴ, いち -> いっ)
+  const QUE_KANA = /^[\u3040-\u30ffー]*$/;
+  function exempleUtilise(k, l, e) {
+    const i = e.mot.indexOf(k);
+    if (i < 0) return false;
+    const d = L.decoupe(l), avant = e.mot.slice(0, i), apres = e.mot.slice(i + k.length);
+    if (!d.rad) return false;
+    const debut = QUE_KANA.test(avant) ? avant : null, fin = QUE_KANA.test(apres) ? apres : null;
+    if (d.okuri && fin && fin[0] !== d.okuri[0]) return false;          // 開く n'utilise pas あ(ける)
+    const formes = new Set([d.rad]);
+    const c = d.rad[0], code = c.charCodeAt(0);
+    if ("かきくけこさしすせそたちつてとはひふへほ".includes(c)) formes.add(String.fromCharCode(code + 1) + d.rad.slice(1));
+    if ("はひふへほ".includes(c)) formes.add(String.fromCharCode(code + 2) + d.rad.slice(1));
+    for (const f of [...formes]) if (f.length >= 2 && "つくちき".includes(f[f.length - 1])) formes.add(f.slice(0, -1) + "っ");
+    return [...formes].some((f) => (debut !== null && fin !== null ? e.kana === debut + f + fin
+      : debut !== null ? e.kana.startsWith(debut + f) : fin !== null ? e.kana.endsWith(f + fin) : e.kana.includes(f)));
+  }
   function ficheHTML(id, neutre) {
     const x = info(id);
     if (neutre) x.type = "";
     if (x.genre === "k") {
       const f = x.fiche;
-      const ex = f.exemples.map((e) => `<li><span class="jp">${esc(e.mot)}</span> <span class="kana">${esc(e.kana)}</span> <span class="fr">${esc(e.fr)}</span></li>`).join("");
+      const ex = f.exemples.map((e) => `<li class="${x.type === "lecture" && exempleUtilise(f.kanji, x.lecture, e) ? "fort" : ""}"><span class="jp">${esc(e.mot)}</span> <span class="kana">${esc(e.kana)}</span> <span class="fr">${esc(e.fr)}</span></li>`).join("");
       const sens = f.sensCartes.map((s, i) => `<span class="${x.type === "sens" && x.idx === i ? "fort" : ""}">${esc(i ? s : maj(s))}</span>`).join(", ");
       const lect = f.lectures.map((l) => `<span class="${x.type === "lecture" && x.lecture === l ? "fort" : ""}">${lectureHTML(f.kanji, l)}</span>`).join(" ・ ");
       return `<div class="fiche">
@@ -175,18 +194,20 @@
       <ul class="fiche-ex">${comp}</ul></div>`;
   }
   function onglets(actif) { document.querySelectorAll("nav button").forEach((b) => b.classList.toggle("actif", b.dataset.vue === actif)); }
-  const minutesObjectif = () => etat.reglages.objectif || S.OBJECTIF_DEFAUT;
+  // objectif du jour (en cartes, calculé d'après les habitudes ; 0 = pas encore d'objectif) et cartes déjà faites aujourd'hui
+  const butDuJour = () => L.objectifDuJour(etat, maintenant());
+  const cartesDuJour = () => L.cartesDuJour(etat, maintenant());
   // les 4 objectifs. cle : compteur de L.objectifs ; k : indice dans une ligne de projection [r5, acquis, r2, r6] ;
-  // h : indice dans l'historique [r5, acquis, total, r2, r6] ; part : part des cartes à atteindre ; c : couleur de sa courbe (1 et 3 seulement)
+  // h : indice dans l'historique [r5, acquis, total, r2, r6] ; part : part des cartes à atteindre ; c : couleur de sa courbe (« En feu » seulement)
   const OBJECTIFS = [
-    { nom: "Tout découvert", regle: "toutes les cartes au rang 2 ou plus", cle: "r2", k: 2, h: 3, part: 1, c: "c1" },
+    { nom: "Tout découvert", regle: "toutes les cartes au rang 2 ou plus", cle: "r2", k: 2, h: 3, part: 1 },
     { nom: "Prêt pour le combat", regle: "75 % des cartes au rang 5 ou plus", cle: "r5", k: 0, h: 0, part: 0.75 },
     { nom: "En feu 🔥", regle: "toutes les cartes au rang 6 ou plus", cle: "r6", k: 3, h: 4, part: 1, c: "c2" },
     { nom: "Maître des kanji", regle: "toutes les cartes acquises", cle: "acquis", k: 1, h: 1, part: 1 },
   ];
   const cibleObjectif = (o, tot) => Math.ceil(o.part * tot);
-  // temps du jour terminé : temps atteint, ou séance arrêtée juste avant la carte qui l'aurait fait dépasser
-  const jourFini = () => L.tempsJour(etat, maintenant()) >= minutesObjectif() * 60 || etat.profil.fini === L.cleJour(maintenant());
+  // objectif du jour atteint (le feu d'artifice a déjà été tiré aujourd'hui)
+  const jourFini = () => etat.profil.fini === L.cleJour(maintenant());
 
   // ---------- chronométrage du temps actif ----------
   let cache = 0, debutCache = null;
@@ -200,7 +221,8 @@
 
   // ---------- une question (QCM 4 choix + « Je ne sais pas ») ----------
   // rappel(res) avec res = "juste" | "faux" | "jsp" | "temps"
-  // opts : titre, chrono (s), texteErreur, bonus (temps du jour terminé : la croix est mise en avant)
+  // opts : titre, chrono (s), texteErreur, bonus (objectif du jour atteint : la croix est mise en avant),
+  //        reste (nombre de cartes avant l'objectif du jour, affiché pour les 5 dernières)
   let minuteur = null;
   function poser(id, opts, rappel) {
     const x = info(id);
@@ -222,12 +244,12 @@
     }
     if (x.type === "sens") g.options = g.options.map(maj), g.bonne = maj(g.bonne);
     window.__bonne = g.bonne; window.__carte = id;   // tests
-    const fait = Math.floor(L.tempsJour(etat, maintenant()) / 60);
     ecran.innerHTML = `
       <div class="q-tete"><span>${esc(opts.titre || "")}</span>${opts.chrono ? `<span class="chrono" id="chrono">${opts.chrono} s</span>` : ""}
-        ${opts.jeu ? `<span class="t-jour ${opts.bonus ? "fait" : ""}">${fait}/${minutesObjectif()} min</span>` : ""}
+        ${opts.jeu && opts.bonus ? `<span class="t-jour fait">Objectif ✓</span>` : ""}
         <button class="quitter ${opts.bonus ? "fort" : ""}" id="b-quit" aria-label="Arrêter">✕</button></div>
       ${opts.chrono ? `<div class="barre"><div id="barre"></div></div>` : ""}
+      ${opts.reste ? `<div class="encore">Encore <b>${opts.reste}</b> avant l'objectif</div>` : ""}
       ${visuel}
       <p class="consigne">${consigne}</p>
       <div class="options">
@@ -249,13 +271,16 @@
         if (v === g.bonne) { b.classList.add("bonne"); bonneBtn = b; }
         else { b.disabled = true; if (b === choisi) b.classList.add("mauvaise"); }
       });
-      if (res === "juste") { bonneBtn.disabled = true; setTimeout(() => rappel(res), 450); return; }
+      if (res === "juste") { bonneBtn.disabled = true; flash(); setTimeout(() => rappel(res), 450); return; }
       // erreur : on laisse le temps de lire ; on avance avec « Continuer » ou en touchant la bonne réponse
       const titres = { faux: "Raté", jsp: "Voici la réponse", temps: "Temps écoulé" };
       $("#correction").innerHTML = `<div class="retour ko">${titres[res]}</div>${opts.texteErreur ? `<p class="palier">${opts.texteErreur}</p>` : ""}
-        ${ficheHTML(id)}<button class="gros" id="b-suite">Continuer</button>`;
+        ${ficheHTML(id)}<button class="gros" id="b-suite">Continuer</button>
+        ${res === "temps" ? "" : `<button class="lien missclick" id="b-miss">J'ai missclick, déso bro</button>`}`;
       const suite = () => rappel(res);
       $("#b-suite").onclick = suite;
+      // erreur de doigt : la réponse compte comme juste (nouvelle carte : on passe à la note ; sinon le rang monte)
+      if ($("#b-miss")) $("#b-miss").onclick = () => { flash(); rappel("juste"); };
       bonneBtn.onclick = suite;
       bonneBtn.classList.add("cliquable");
       bonneBtn.scrollIntoView({ block: "nearest" });
@@ -279,7 +304,32 @@
     }
   }
 
-  // ---------- feu d'artifice (temps du jour atteint) ----------
+  // ---------- petites récompenses ----------
+  // bonne réponse : un éclair sur les côtés de l'écran (vert, ou doré selon le thème)
+  function flash() {
+    const f = document.createElement("div");
+    f.className = "flash";
+    document.body.appendChild(f);
+    setTimeout(() => f.remove(), 650);
+  }
+  // petite explosion au milieu de l'écran avec un message (série de bonnes réponses, carte en feu, carte acquise) :
+  // elle se joue sur la carte qu'on vient de finir, la suivante n'arrive qu'après (un toucher la passe)
+  function feter(textes, ensuite) {
+    const d = document.createElement("div");
+    d.className = "boum";
+    const couleurs = ["--or", "--vert", "--accent-ink", "--orange"];
+    d.innerHTML = `<div class="boum-centre">${Array.from({ length: 18 }, (_, i) =>
+      `<i style="--a:${i * 20}deg;--d:${110 + (i % 3) * 34}px;background:var(${couleurs[i % 4]})"></i>`).join("")}
+      <div class="boum-msg">${textes.map((t) => `<span>${t}</span>`).join("")}</div></div>`;
+    document.body.appendChild(d);
+    let fini = false;
+    const fin = () => { if (fini) return; fini = true; clearTimeout(minuterie); d.remove(); ensuite(); };
+    const minuterie = setTimeout(fin, 1300);
+    d.onclick = fin;
+    window.__fete = { fin, textes };   // tests
+  }
+
+  // ---------- feu d'artifice (objectif du jour atteint) ----------
   function feuDArtifice(titre, ensuite) {
     const c = document.createElement("canvas");
     c.className = "feu";
@@ -333,11 +383,17 @@
     window.__feu = { fin };   // tests
   }
 
-  // ---------- JOUER : cartes jouables du rang le plus haut au plus bas, puis nouvelles cartes, jusqu'au temps du jour ----------
+  // ---------- JOUER : cartes jouables du rang le plus haut au plus bas, puis nouvelles cartes ; feu d'artifice à l'objectif du jour ----------
   function jouer() {
-    const objectif = () => minutesObjectif() * 60;
-    const session = { rattrapage: [], depuis: 0, challenge: null, faites: 0, nouvelles: 0,
-      bonus: jourFini() };   // temps du jour déjà fait : on joue en plus, sans arrêt automatique
+    const budget = () => L.tempsHabituel(etat, maintenant()) * 60;   // temps habituel d'une journée : sert à décider d'avancer des cartes
+    const session = { rattrapage: [], depuis: 0, challenge: null, faites: 0, nouvelles: 0, serie: 0, reste: 0,
+      bonus: jourFini() };   // objectif du jour déjà atteint : on joue en plus, sans nouvel arrêt
+    // bonnes réponses d'affilée dans la séance : une petite fête toutes les 5
+    const serie = (juste) => {
+      const n = session.serie = juste ? session.serie + 1 : 0;
+      return juste && n % 5 === 0 ? [`${n >= 20 ? "🚀" : n >= 15 ? "💥" : n >= 10 ? "🔥" : "⚡"} ${n} d'affilée !`] : [];
+    };
+    const puis = (fetes) => (fetes.length ? feter(fetes, suivante) : suivante());
     const nomCarte = (id) => { const x = info(id); return `${x.genre === "k" ? "Kanji" : "Mot"} · ${x.type}`; };
     const compter = (id, juste, rang) => L.enregistrerReponse(etat, juste, L.tempsActif(etat, tempsQuestion()), maintenant(), L.typeCarte(id), rang);
     // prochaine carte : rattrapage (3 cartes après l'erreur), cartes à échéance, cartes avancées (jour à venir trop chargé), nouvelle carte
@@ -345,20 +401,24 @@
       const dues = L.aJouer(etat, t).dues;
       if (session.rattrapage.length && (session.depuis >= 3 || !dues.length)) return { genre: "rattrapage", id: session.rattrapage[0] };
       if (dues.length) return { genre: "revision", id: dues[0], dues };
-      const av = L.aAvancer(etat, t, objectif());
+      const av = L.aAvancer(etat, t, budget());
       if (av) return { genre: "avance", id: av };
       const pr = L.prochaineNouvelle(etat, cartesActives().cartes);
-      return pr.carte ? { genre: "nouvelle", id: pr.carte.id } : { genre: "rien", pr };
+      if (pr.carte) return { genre: "nouvelle", id: pr.carte.id };
+      // plus rien d'autre à proposer : une carte mise de côté (3 erreurs de suite au rang 1) revient, sans rien dire
+      const loin = L.prochaineLointaine(etat);
+      if (loin) { L.ramener(etat, loin, t); return { genre: "revision", id: loin, dues: [loin] }; }
+      return { genre: "rien", pr };
     };
     const suivante = () => {
       const t = maintenant();
+      const but = butDuJour(), fait = cartesDuJour();
+      // objectif du jour atteint : feu d'artifice (une seule fois par jour)
+      if (!session.bonus && but > 0 && fait >= but) return finObjectif();
       const c = choisir(t);
       if (c.genre === "rien") return finJeu(c.pr);
-      // la carte ferait dépasser le temps du jour : on s'arrête avant de la présenter
-      if (!session.bonus && L.tempsJour(etat, t) + L.estimation(etat, c.id) > objectif()) {
-        if (session.faites + session.nouvelles > 0) return finTemps();
-        session.bonus = true;
-      }
+      // compte à rebours des 5 dernières cartes avant l'objectif
+      session.reste = !session.bonus && but > 0 && but - fait <= 5 ? but - fait : 0;
       if (c.genre === "rattrapage") { session.rattrapage.shift(); return rattraper(c.id); }
       if (c.genre === "revision") {
         const chronos = c.dues.filter((id) => S.CHRONO[etat.tuiles[id].rang]);
@@ -375,21 +435,23 @@
     };
     const reviser = (id, avance) => {
       const avant = etat.tuiles[id].rang;
-      poser(id, { jeu: true, bonus: session.bonus, chrono: S.CHRONO[avant] || null, titre: `${avance ? "En avance · " : ""}${L.nomRang(avant)}` }, (res) => {
+      poser(id, { jeu: true, bonus: session.bonus, reste: session.reste, chrono: S.CHRONO[avant] || null, titre: `${avance ? "En avance · " : ""}${L.nomRang(avant)}` }, (res) => {
         const juste = res === "juste";
         compter(id, juste, avant);
         const apres = L.repondre(etat, id, juste, maintenant());
         session.faites++; session.depuis++;
-        if (!juste) { session.rattrapage.push(id); session.depuis = 0; }
+        // une carte mise de côté ne revient pas « à revoir » : elle disparaît de la séance
+        if (!juste) { if (!etat.tuiles[id].loin) session.rattrapage.push(id); session.depuis = 0; }
         sauver();
-        if (apres === S.ACQUIS) alerte("🏆 Carte définitivement acquise !");
-        else if (!juste) alerte(apres === avant ? "Reste au rang 1 : elle revient dans 3 h" : `${L.nomRang(avant)} → ${L.nomRang(apres)}${apres === 1 ? " (revient dans 3 h)" : ""}`);
-        suivante();
+        const fetes = serie(juste);
+        if (apres === S.ACQUIS) fetes.push("🏆 Carte acquise pour de bon !");
+        else if (juste && apres === 6) fetes.push("🔥 Une carte de plus en feu !");
+        puis(fetes);
       });
     };
     const rattraper = (id) => {
       session.depuis = 0;
-      poser(id, { jeu: true, bonus: session.bonus, titre: "À revoir (ne change pas le rang)" }, (res) => {
+      poser(id, { jeu: true, bonus: session.bonus, reste: session.reste, titre: "À revoir (ne change pas le rang)" }, (res) => {
         L.ajouterTemps(etat, L.tempsActif(etat, tempsQuestion()), maintenant()); sauver();
         if (res !== "juste") session.rattrapage.push(id);
         suivante();
@@ -397,41 +459,50 @@
     };
     const nouvelle = (id) => {
       const x = info(id);
-      poser(id, { jeu: true, bonus: session.bonus, titre: `Nouvelle carte · ${nomCarte(id)}`, texteErreur: "Carte ajoutée au rang 1 : tu la revois demain." }, (res) => {
+      poser(id, { jeu: true, bonus: session.bonus, reste: session.reste, titre: `Nouvelle carte · ${nomCarte(id)}`, texteErreur: "Carte ajoutée au rang 1 : tu la revois demain." }, (res) => {
         session.depuis++;
         if (res !== "juste") {
-          compter(id, false, 0);
+          compter(id, false, 0); serie(false);
           session.nouvelles++; L.placer(etat, id, 1, maintenant(), false); sauver(); return suivante();
         }
         const niveaux = [["tres_peu", "Très peu (c'était de la chance)"], ["un_peu", "Un peu"], ["moyen", "Moyen"], ["bien", "Bien"], ["tres_bien", "Très bien"]];
         const aff = x.genre === "m" ? motHTML(x.mot, false) : esc(x.type === "lecture" ? L.affichageLecture(x.cle, x.lecture) : x.cle);
-        ecran.innerHTML = `<div class="retour ok">Juste !</div>
+        // tant que la carte n'est pas notée, rien n'est enregistré : quitter ici (croix, appli fermée) = carte jamais jouée
+        ecran.innerHTML = `<div class="q-tete"><span>Nouvelle carte · ${nomCarte(id)}</span><button class="quitter ${session.bonus ? "fort" : ""}" id="b-quit" aria-label="Arrêter">✕</button></div>
+          <div class="retour ok">Juste !</div>
           <div class="q-mot petit jp">${aff}</div>
           <p class="consigne">Tu le connaissais comment ?</p>
           <div class="options">${niveaux.map(([k, tx]) => `<button class="opt" data-c="${k}">${tx}</button>`).join("")}</div>`;
+        $("#b-quit").onclick = accueil;
+        scrollTo(0, 0);
         document.querySelectorAll("[data-c]").forEach((b) => b.onclick = () => {
           const r = S.CONFIANCE[b.dataset.c];
           compter(id, true, 0);
           L.placer(etat, id, r, maintenant(), true); sauver();
           session.nouvelles++;
-          alerte(`Placée : ${L.nomRang(r)}`);
-          suivante();
+          const fetes = serie(true);
+          if (r >= 6) fetes.push("🔥 En feu du premier coup !");
+          puis(fetes);
         });
       });
     };
     const bilan = () => `${session.faites} carte${session.faites > 1 ? "s" : ""} revue${session.faites > 1 ? "s" : ""} et ${session.nouvelles} nouvelle${session.nouvelles > 1 ? "s" : ""} dans cette séance.`;
-    // temps du jour atteint : feu d'artifice, puis Arrêter ou Continuer (la séance continue alors jusqu'à la croix)
-    const finTemps = () => feuDArtifice("Temps du jour terminé !", () => {
+    // objectif du jour atteint : feu d'artifice, puis Continuer ou Arrêter (la séance continue alors jusqu'à la croix)
+    const finObjectif = () => {
       etat.profil.fini = L.cleJour(maintenant()); sauver();
-      ecran.innerHTML = `<div class="retour ok">Temps du jour atteint 🎉</div>
-        <p class="info">${bilan()}</p>
-        <button class="gros" id="b-stop">Arrêter</button>
-        <button class="second" id="b-continuer">Continuer</button>
-        <p class="aide">Continuer ne change pas ton temps des prochains jours. Tu t'arrêtes quand tu veux avec la croix ✕ en haut à droite.</p>`;
-      $("#b-stop").onclick = accueil;
-      $("#b-continuer").onclick = () => { session.bonus = true; suivante(); };
-    });
+      feuDArtifice("Objectif du jour atteint !", () => {
+        ecran.innerHTML = `<div class="retour ok">Objectif atteint 🎉</div>
+          <p class="info">${bilan()}</p>
+          <button class="gros" id="b-continuer">Continuer sur ma lancée</button>
+          <button class="second" id="b-stop">Arrêter pour aujourd'hui</button>`;
+        $("#b-stop").onclick = accueil;
+        $("#b-continuer").onclick = () => { session.bonus = true; suivante(); };
+      });
+    };
     const finJeu = (pr) => {
+      // plus de carte avant l'objectif : il est ramené à ce qui a été fait (ce n'est pas un objectif raté)
+      const auj = L.cleJour(maintenant()), fait = cartesDuJour();
+      if (!session.bonus && fait > 0 && butDuJour() > fait) { etat.profil.buts[auj] = fait; etat.profil.fini = auj; sauver(); }
       const prochaine = L.prochaineOuverture(etat);
       const msg = pr.phase === "fini" ? "Toutes les cartes ont été vues. Bravo !"
         : `Les prochains mots se débloquent quand les cartes de leurs kanji sont au rang 5 (${pr.attente} carte(s) en attente).`;
@@ -444,7 +515,7 @@
     const demarrer = () => {
       const n = L.appliquerRetards(etat, maintenant());
       if (n) sauver();
-      if (session.bonus) alerte("Temps du jour déjà fait : tu joues en bonus.");
+      if (session.bonus) alerte("Objectif du jour déjà atteint : c'est du bonus !");
       suivante();
     };
     // objectif changé : la 1re fois, on demande quoi faire des cartes commencées hors objectif
@@ -486,64 +557,11 @@
     window.__challenge = { go };   // tests
   }
 
-  // ---------- temps à régler pour atteindre chaque objectif dans 1 an (Paramètres) ----------
-  // même simulation que l'estimation de l'accueil, relancée avec plusieurs temps par jour (par pas de 5 min, 12 h max)
-  // un objectif est « atteint en 1 an » s'il l'est au moins un jour de l'année simulée ; calcul lancé seulement à la demande (icône)
-  const MAX_CALC = 720;
-  let calculAn = null;                       // { cle, res: [{ minutes | null, max }] | null (en cours) }
-  const cleCalculAn = () => `${L.cleJour(maintenant())}|${etat.journal.length}|${cartesActives().choix}`;
-  const ecrireMinutes = (m) => (m >= 60 ? `${Math.floor(m / 60)} h${m % 60 ? " " + String(m % 60).padStart(2, "0") : ""}` : `${m} min`);
-  function texteCalculAn() {
-    if (!assezDeDonnees()) return `<span class="calc-titre">Disponible après 20 réponses</span>`;
-    if (!calculAn || calculAn.cle !== cleCalculAn() || !calculAn.res) return `<span class="en-calcul"><i class="tourne"></i>EN CALCUL...</span>`;
-    return `<span class="calc-titre">Temps par jour pour y arriver en 1 an</span>` + OBJECTIFS.map((o, i) => {
-      const r = calculAn.res[i];
-      return `<span class="calc-ligne"><span>${o.nom}</span><span>${r.minutes ? `≈ <b>${ecrireMinutes(r.minutes)}</b>` : `impossible (max ${Math.floor(r.max * 100)} %)`}</span></span>`;
-    }).join("");
-  }
-  function lancerCalculAn() {
-    if (!assezDeDonnees()) return;
-    const cle = cleCalculAn();
-    if (calculAn && calculAn.cle === cle) return;          // déjà calculé (ou en cours) aujourd'hui pour cette progression
-    calculAn = { cle, res: null };
-    const act = cartesActives(), tot = act.ids.length, t = maintenant();
-    const graine = Math.floor(L.debutJour(t) / L.J);
-    const pause = () => new Promise((r) => setTimeout(r, 30));   // laisse l'écran respirer entre deux simulations
-    // pour un temps par jour donné : le meilleur niveau atteint dans l'année par chaque compteur [r5, acquis, r2, r6] (résultat gardé)
-    const faits = {};
-    const meilleur = async (m) => {
-      if (!faits[m]) {
-        await pause();
-        const P = L.projeter(etat, act.cartes, t, { minutes: m, graine });
-        faits[m] = [0, 1, 2, 3].map((k) => P.reduce((mx, v) => Math.max(mx, v[k]), 0));
-      }
-      return faits[m];
-    };
-    // plus petit temps (multiple de 5 min) qui atteint l'objectif, sachant qu'il est atteint à MAX_CALC
-    const chercher = async (o) => {
-      let bas = 0, haut = MAX_CALC / 5;
-      while (haut - bas > 1) { const mil = Math.floor((bas + haut) / 2); if ((await meilleur(mil * 5))[o.k] >= cibleObjectif(o, tot)) haut = mil; else bas = mil; }
-      return haut * 5;
-    };
-    (async () => {
-      const max = await meilleur(MAX_CALC);
-      const res = [];
-      for (const o of OBJECTIFS) {
-        const c = cibleObjectif(o, tot);
-        res.push({ minutes: max[o.k] >= c ? await chercher(o) : null, max: Math.min(1, max[o.k] / c) });
-      }
-      if (!calculAn || calculAn.cle !== cle) return;
-      calculAn.res = res;
-      const p = $("#p-calc");
-      if (p) p.innerHTML = texteCalculAn();
-    })();
-  }
-
   // ---------- accueil ----------
   // courbe : progression réelle (trait plein) puis estimation (pointillés) avec repères à 1 mois, 6 mois, 1 an
   const REPERES = [[30, "1 mois"], [182, "6 mois"], [365, "1 an"]];
   let projection = null;                     // { cle, points } : recalculée quand le jour ou la progression change
-  const cleProjection = () => `${L.cleJour(maintenant())}|${etat.journal.length}|${cartesActives().choix}|${minutesObjectif()}`;
+  const cleProjection = () => `${L.cleJour(maintenant())}|${etat.journal.length}|${cartesActives().choix}`;
   const assezDeDonnees = () => etat.profil.reponses.length >= 20;
   function courbe(P) {
     const ids = cartesActives().ids, tot = ids.length;
@@ -552,7 +570,7 @@
     // jours d'avant la v12.2 : pas de compteurs rang 2 et rang 6, ils ne sont pas tracés
     const h = Object.entries(etat.historique).filter(([c, v]) => c < auj && v.length >= 5).sort();
     h.push([auj, [o.r5, o.acquis, tot, o.r2, o.r6]]);
-    const traces = OBJECTIFS.filter((x) => x.c);            // courbes : objectifs 1 et 3
+    const traces = OBJECTIFS.filter((x) => x.c);            // courbe : « En feu » seulement
     // avancement d'un objectif en % (arrondi vers le bas : 100 % seulement s'il est atteint)
     const pc = (v, x) => `${Math.floor(Math.min(1, v / cibleObjectif(x, tot)) * 100)} %`;
     const pastille = (x) => `<span class="pastille ${x.c || "vide"}"></span>`;
@@ -595,11 +613,11 @@
     if (retards) { sauver(); alerte(`${retards} carte${retards > 1 ? "s" : ""} redescendue${retards > 1 ? "s" : ""} d'un rang (pas vue${retards > 1 ? "s" : ""} à temps).`); }
     const act = cartesActives();
     const pr = L.prochaineNouvelle(etat, act.cartes);
-    const obj = minutesObjectif(), fait = L.tempsJour(etat, t) / 60;
+    const but = butDuJour(), nb = cartesDuJour(), min = Math.floor(L.tempsJour(etat, t) / 60);
     let sous;
     const fini = jourFini();
-    if (fini) sous = "Temps du jour fait ✓ (tu peux continuer en bonus)";
-    else if (L.aJouer(etat, t).dues.length || pr.carte) sous = fait >= 0.1 ? `Encore ${Math.ceil(obj - fait)} min aujourd'hui` : `${obj} min aujourd'hui`;
+    if (fini) sous = "Objectif du jour atteint ✓ (continue si tu veux)";
+    else if (L.aJouer(etat, t).dues.length || pr.carte || L.prochaineLointaine(etat)) sous = nb ? "On continue ?" : "C'est parti !";
     else { const p = L.prochaineOuverture(etat); sous = p ? `Prochaine carte ${duree(p - t)}` : "Rien à faire"; }
     const cle = cleProjection();
     const P = projection && projection.cle === cle ? projection.points : null;
@@ -607,8 +625,8 @@
       <h1><img class="logo-mini" src="nihon-192.png" alt="">Kanji JLPT <span class="sous">${{ N5: "N5", N4: "N4", N5N4: "N5 · N4" }[act.choix]}</span></h1>
       <button class="gros jouer" id="b-jouer">▶ Jouer<span>${sous}</span></button>
       <div class="carte-info temps-jour">
-        <div class="tj-texte"><span>Temps du jour</span><b>${fini ? "✓ " : ""}${Math.floor(fait)} / ${obj} min</b></div>
-        <div class="tj-barre"><div class="${fini ? "plein" : ""}" style="width:${fini ? 100 : Math.min(100, (fait / obj) * 100).toFixed(0)}%"></div></div>
+        <div class="tj-texte"><span>Aujourd'hui</span><b>${fini ? "✓ " : ""}${nb} carte${nb > 1 ? "s" : ""} · ${min} min</b></div>
+        ${fini || but > 0 ? `<div class="tj-barre"><div class="${fini ? "plein" : ""}" style="width:${fini ? 100 : Math.min(100, (nb / but) * 100).toFixed(0)}%"></div></div>` : ""}
       </div>
       <div class="carte-info" id="bloc-courbe">${courbe(P)}</div>`;
     $("#b-jouer").onclick = jouer;
@@ -660,6 +678,7 @@
     if (!t) return "pas encore vue";
     if (t.rang >= S.ACQUIS) return "Acquis";
     if (t.pause) return `${L.nomRang(t.rang)}, en pause`;
+    if (t.loin) return `${L.nomRang(t.rang)}, revient plus tard`;
     const f = L.fenetre(t), n = maintenant();
     return `${L.nomRang(t.rang)}, ${f.due <= n ? "à revoir maintenant" : "revient " + duree(f.due - n)}`;
   }
@@ -727,22 +746,15 @@
         <div class="segments" role="radiogroup">${Object.entries(CHOIX_NIVEAUX).map(([k, nom]) =>
           `<button class="seg ${k === ch ? "actif" : ""}" data-niv="${k}" role="radio" aria-checked="${k === ch}"><b>${{ N5: "N5", N4: "N4", N5N4: "N5 + N4" }[k]}</b><span>${compte(k)}</span></button>`).join("")}</div>
       </section>
-      <section class="panneau">
-        <h2>Temps par jour</h2>
-        <div class="ligne-reglage"><span>Temps visé <button class="icone" id="b-calc" aria-label="Temps par jour pour atteindre chaque objectif en 1 an" aria-expanded="false">🎯</button></span>
-          <span class="saisie-temps"><input type="number" id="s-obj-h" min="0" max="12" step="1" inputmode="numeric" aria-label="Heures" value="${Math.floor(minutesObjectif() / 60)}"> h
-          <input type="number" id="s-obj-m" min="0" max="59" step="1" inputmode="numeric" aria-label="Minutes" value="${minutesObjectif() % 60}"> min</span></div>
-        <div class="calc-an" id="p-calc" hidden></div>
-      </section>
-      <section class="panneau">
-        <h2>Thème</h2>
+      <details class="panneau" id="d-theme">
+        <summary>Thème</summary>
         ${FAMILLES_THEMES.map(([fam, ts]) => `<div class="th-fam">${fam}</div><div class="th-grille">${ts.map(([k, nom]) => {
           const [page, accent] = COULEURS_THEMES[k];
           return `<button class="th ${k === themeActif ? "actif" : ""}" data-th="${k}" aria-pressed="${k === themeActif}"><i style="background:${page};border-color:${accent}"><i style="background:${accent}"></i></i><span>${nom}</span></button>`;
         }).join("")}</div>`).join("")}
-      </section>
-      <section class="panneau">
-        <h2>Mes stats</h2>
+      </details>
+      <details class="panneau" id="d-stats">
+        <summary>Mes stats</summary>
         <div class="tuiles-stat">
           <div class="stat"><b>${taux} %</b><span>bonnes réponses</span></div>
           <div class="stat"><b>${Math.round(L.secondesParCarte(etat))} s</b><span>par carte</span></div>
@@ -762,7 +774,7 @@
           <div class="stat"><b>${tend ? `${Math.round(tend.taux[0] * 100)} → ${Math.round(tend.taux[1] * 100)} %` : "–"}</b><span>bonnes réponses</span></div>
           <div class="stat"><b>${tend ? `${Math.round(tend.secondes[0])} → ${Math.round(tend.secondes[1])} s` : "–"}</b><span>par carte</span></div>
         </div>
-      </section>
+      </details>
       <section class="panneau">
         <h2>Mise à jour</h2>
         <p class="ligne-reglage">Version installée <b id="v-inst" class="version">…</b></p>
@@ -780,20 +792,24 @@
           <label class="second fichier">Restaurer<input type="file" id="f-rest" accept=".json,application/json"></label>
         </div>
       </section>
-      <details class="panneau">
+      <details class="panneau" id="d-regles">
         <summary>Règles de l'appli</summary>
         <h3>Accueil</h3>
         <ul class="regles">
           <li><b>Les 4 objectifs</b> : ${OBJECTIFS.map((o, i) => `${i + 1}. <b>${o.nom}</b> : ${o.regle}`).join(" ; ")}. Ils comptent toutes les cartes de ton choix N5 / N4 / N5 + N4.</li>
-          <li><b>Courbe</b> : elle montre les objectifs 1 et 3. Trait plein : ta progression réelle, à partir du 2e jour. Pointillés : une estimation à 1 mois, 6 mois et 1 an, calculée d'après ton rythme réel (temps par jour, réussite, vitesse) et refaite chaque jour, à partir d'une vingtaine de réponses. Ce n'est pas une garantie.</li>
+          <li><b>Aujourd'hui</b> : le nombre de cartes faites et le temps passé. La barre avance vers ton objectif du jour.</li>
+          <li><b>Courbe</b> : elle montre l'objectif « En feu 🔥 ». Trait plein : ta progression réelle, à partir du 2e jour. Pointillés : une estimation à 1 mois, 6 mois et 1 an, calculée d'après ton rythme réel (temps par jour, réussite, vitesse) et refaite chaque jour, à partir d'une vingtaine de réponses. Ce n'est pas une garantie.</li>
           <li><b>Tableau</b> : l'avancement estimé de chaque objectif (100 % = objectif atteint).</li>
         </ul>
         <h3>Jouer</h3>
         <ul class="regles">
-          <li><b>Jouer</b> : d'abord les cartes à revoir, de la mieux connue à la moins connue (les cartes chronométrées en premier), puis les nouvelles cartes. La séance s'arrête avant la carte qui ferait dépasser ton temps du jour.</li>
+          <li><b>Jouer</b> : d'abord les cartes à revoir, de la mieux connue à la moins connue (les cartes chronométrées en premier), puis les nouvelles cartes. Tu t'arrêtes quand tu veux avec la croix ✕.</li>
+          <li><b>Objectif du jour</b> : rien à régler. L'appli regarde combien de cartes tu fais d'habitude et te fixe un objectif à ta portée, qui s'adapte à toi de jour en jour. Les 5 dernières cartes sont décomptées, puis c'est le feu d'artifice ; tu peux continuer ensuite. Le premier jour, il n'y a pas encore d'objectif : joue comme tu le sens.</li>
+          <li><b>Encouragements</b> : un éclair sur les côtés à chaque bonne réponse, une petite explosion toutes les 5 bonnes réponses d'affilée, quand une carte passe « en feu » (rang 6) et quand elle est acquise.</li>
+          <li><b>Erreur de doigt</b> : sous « Continuer », le bouton « J'ai missclick, déso bro » compte ta réponse comme juste.</li>
           <li><b>Rangs</b> : chaque carte a un rang de 1 à 10, puis Acquis. Délai avant de la revoir : rangs 1 et 2 : 1 jour, rang 3 : 2 jours, rang 4 : 3 jours, rang 5 : 1 semaine, rang 6 : 2 semaines, rang 7 : 1 mois, rangs 8 et 9 : 80 jours, rang 10 : 1 mois. Les rangs 9 et 10 sont chronométrés (30 s puis 12 s).</li>
           <li><b>Réponse</b> : juste = +1 rang, erreur = -1 rang. Une carte ratée qui se retrouve au rang 1 revient 3 h plus tard. Dans la séance, une carte ratée repasse 3 cartes plus tard, sans effet sur son rang.</li>
-          <li><b>Nouvelle carte</b> : ratée, elle entre au rang 1. Réussie, ta note la place : très peu = rang 1, un peu = 2, moyen = 5, bien = 7, très bien = 8.</li>
+          <li><b>Nouvelle carte</b> : ratée, elle entre au rang 1. Réussie, ta note la place : très peu = rang 1, un peu = 2, moyen = 5, bien = 7, très bien = 8. Si tu quittes avant de la noter, elle n'est pas comptée : elle reviendra comme une nouvelle carte.</li>
           <li><b>Retard</b> : une carte a quelques jours de marge pour être revue (1 jour aux rangs 1 à 4, 7 à 16 jours ensuite). Passé ce délai, elle descend d'un rang, sans que ce soit compté comme une erreur.</li>
           <li><b>Ordre des nouvelles cartes</b> : les kanji seuls, puis le vocabulaire niveau 1 (tous les kanji du mot sont à connaître), puis le niveau 2 (furigana sur les kanji hors liste), les mots les plus courts d'abord. Un mot arrive quand, pour chacun de ses kanji, le sens et la prononciation utilisée dans le mot sont au rang 5.</li>
           <li><b>Temps</b> : plus d'une minute sur une carte ne compte pas (téléphone posé).</li>
@@ -810,8 +826,6 @@
         <h3>Options</h3>
         <ul class="regles">
           <li><b>Objectif N5 / N4</b> : les nouvelles cartes, la progression et l'onglet Progrès suivent ton choix. Si tu le changes, au prochain Jouer l'appli te demande si tu gardes ou retires les cartes commencées qui n'en font plus partie. En N4 seul, les kanji N5 sont supposés connus.</li>
-          <li><b>Temps par jour</b> : c'est le seul réglage à faire, de 1 min à 12 h. Jouer choisit les cartes tout seul et s'arrête quand ce temps est atteint ; tu peux alors continuer si tu veux.</li>
-          <li><b>Icône 🎯</b> : le temps par jour à régler pour atteindre chaque objectif en 1 an. C'est la même estimation que la courbe, refaite avec plusieurs temps par jour (par pas de 5 min, jusqu'à 12 h) ; le calcul est long. « Impossible » : même 12 h par jour ne suffisent pas, avec le maximum atteignable. Une carte met au moins 248 jours sans erreur pour passer de nouvelle à Acquis : tout acquérir en 1 an est donc impossible.</li>
           <li><b>Thème</b> : les thèmes du dashboard SUPERVISOR3000. Le changement est immédiat.</li>
           <li><b>Mes stats</b> : bonnes réponses sur tes 200 dernières cartes revues (50 % au départ, tant qu'il y a moins de 30 réponses) ; secondes par carte ; temps tenu par jour (moyenne des 7 derniers jours, après 7 jours d'utilisation) ; jours joués d'affilée ; temps total passé ; cartes déjà vues. Temps par type de carte : moyenne des 50 dernières cartes de ce type. Réussite par rang : tes 60 dernières réponses à ce rang. Tendance : tes dernières réponses comparées aux précédentes (à partir de 40 réponses).</li>
           <li><b>Mise à jour</b> : l'appli vérifie toute seule à chaque ouverture et te prévient quand une nouvelle version est prête.</li>
@@ -846,26 +860,6 @@
       document.querySelectorAll("[data-th]").forEach((x) => { const a = x === bt; x.classList.toggle("actif", a); x.setAttribute("aria-pressed", a); });
       alerte(`Thème : ${bt.textContent}`);
     });
-    // icône 🎯 : ouvre ou referme le temps à régler pour chaque objectif en 1 an (calcul lancé à la première ouverture)
-    $("#b-calc").onclick = () => {
-      const p = $("#p-calc");
-      p.hidden = !p.hidden;
-      $("#b-calc").setAttribute("aria-expanded", !p.hidden);
-      if (p.hidden) return;
-      lancerCalculAn();
-      p.innerHTML = texteCalculAn();
-    };
-    // temps visé saisi librement en heures + minutes (1 min à 12 h)
-    const majObjectif = () => {
-      const h = Math.max(0, Math.floor(+$("#s-obj-h").value || 0)), m = Math.max(0, Math.floor(+$("#s-obj-m").value || 0));
-      if (h * 60 + m < 1) return;                          // 0 h 0 min : saisie en cours, on attend l'autre case
-      const total = Math.min(720, h * 60 + m);
-      etat.reglages.objectif = total; sauver();
-      // cases réécrites seulement si la saisie a été corrigée (75 min -> 1 h 15, plus de 12 h, nombre négatif ou à virgule)
-      if (Math.floor(total / 60) !== +$("#s-obj-h").value || total % 60 !== +$("#s-obj-m").value) { $("#s-obj-h").value = Math.floor(total / 60); $("#s-obj-m").value = total % 60; }
-      alerte(`Temps visé : ${total >= 60 ? `${Math.floor(total / 60)} h${total % 60 ? " " + (total % 60) + " min" : ""}` : total + " min"} par jour`);
-    };
-    $("#s-obj-h").onchange = majObjectif; $("#s-obj-m").onchange = majObjectif;
     $("#b-sauv").onclick = () => {
       const blob = new Blob([JSON.stringify(etat)], { type: "application/json" });
       const a = document.createElement("a");

@@ -14,7 +14,11 @@ const SRS = {
   CONFIANCE: { tres_peu: 1, un_peu: 2, moyen: 5, bien: 7, tres_bien: 8 },
   ACQUIS_RATE: { rang: 9, delai: 30 },       // onglet Acquis : erreur -> rang 9, revue 30 jours plus tard
   PAUSE_MAX: 60,                             // s : au-delà, on considère que le téléphone a été posé
-  OBJECTIF_DEFAUT: 10,                       // min par jour
+  OBJECTIF_DEFAUT: 10,                       // min par jour supposées tant qu'on ne connaît pas le rythme de la personne
+  ECHECS_MAX: 3,                             // erreurs de suite au rang 1 avant de mettre la carte de côté (elle revient à la fin)
+  BUT_PART: 0.85,                            // objectif du jour = 85 % du nombre de cartes habituel
+  BUT_MIN: 5,                                // objectif du jour : jamais moins de 5 cartes
+  BUT_JOURS: 7,                              // jours joués pris en compte
 };
 // intervalles de la version 2 (v11), pour retrouver la date de la dernière réponse à la migration
 const ANCIEN = { 1: 4 * H, 2: 8 * H, 3: J, 4: 2 * J, 5: 7 * J, 6: 14 * J, 7: 30 * J, 8: 120 * J, 9: 30 * J, 10: 30 * J };
@@ -44,7 +48,7 @@ function fenetre(t) {
   return { ouvre: plusJours(t.base, delai - av), due: plusJours(t.base, delai), limite };
 }
 
-function etatVide() { return { version: 3, tuiles: {}, journal: [], profil: { reponses: [], jours: {} }, historique: {}, reglages: { objectif: SRS.OBJECTIF_DEFAUT } }; }
+function etatVide() { return { version: 3, tuiles: {}, journal: [], profil: { reponses: [], jours: {}, buts: {} }, historique: {}, reglages: {} }; }
 
 // plan(id, version) -> ids des cartes actuelles qui reprennent la progression de l'ancienne carte « id »
 function migrer(e, plan, maintenant) {
@@ -104,6 +108,11 @@ function appliquer(t, juste, maintenant) {
 function repondre(etat, id, juste, maintenant) {
   const t = etat.tuiles[id], avant = t.rang;
   appliquer(t, juste, maintenant);
+  // carte qui ne décolle pas : 3 erreurs de suite au rang 1 -> mise de côté, elle revient quand il n'y a plus rien d'autre
+  if (avant === 1 && !juste) {
+    t.echecs = (t.echecs || 0) + 1;
+    if (t.echecs >= SRS.ECHECS_MAX) { t.loin = true; delete t.echecs; }
+  } else delete t.echecs;
   noter(etat, [maintenant, id, juste ? 1 : 0, avant, t.rang]);
   return t.rang;
 }
@@ -135,7 +144,7 @@ function appliquerRetards(etat, maintenant) {
 function aJouer(etat, maintenant) {
   const dues = [], avance = [];
   for (const [id, t] of Object.entries(etat.tuiles)) {
-    if (t.pause || t.rang >= SRS.ACQUIS) continue;
+    if (t.pause || t.loin || t.rang >= SRS.ACQUIS) continue;
     const f = fenetre(t);
     if (f.ouvre > maintenant) continue;
     (f.due <= maintenant ? dues : avance).push([id, t.rang, f.due <= maintenant ? f.limite : f.due]);
@@ -150,7 +159,7 @@ function aAvancer(etat, maintenant, budget, jours = 10) {
   const cout = (id) => { const ty = typeCarte(id); return sec[ty] || (sec[ty] = secondesParType(etat, ty)); };
   const fin = plusJours(maintenant, jours + 1);
   for (const [id, t] of Object.entries(etat.tuiles)) {
-    if (t.pause || t.rang >= SRS.ACQUIS) continue;
+    if (t.pause || t.loin || t.rang >= SRS.ACQUIS) continue;
     const f = fenetre(t);
     if (f.due <= maintenant || f.due >= fin) continue;
     charge[f.due] = (charge[f.due] || 0) + cout(id);
@@ -162,11 +171,23 @@ function aAvancer(etat, maintenant, budget, jours = 10) {
 function prochaineOuverture(etat) {
   let min = null;
   for (const t of Object.values(etat.tuiles)) {
-    if (t.pause || t.rang >= SRS.ACQUIS) continue;
+    if (t.pause || t.loin || t.rang >= SRS.ACQUIS) continue;
     const o = fenetre(t).due;
     if (min === null || o < min) min = o;
   }
   return min;
+}
+
+// carte mise de côté (3 erreurs de suite au rang 1) : la plus ancienne d'abord ; ramener = elle redevient jouable tout de suite
+function prochaineLointaine(etat) {
+  let id = null, base = Infinity;
+  for (const [i, t] of Object.entries(etat.tuiles)) if (t.loin && !t.pause && t.base < base) { id = i; base = t.base; }
+  return id;
+}
+function ramener(etat, id, maintenant) {
+  const t = etat.tuiles[id];
+  delete t.loin; delete t.court; delete t.echecs;
+  t.base = plusJours(maintenant, -SRS.DELAI[1]);
 }
 
 // cartes hors de l'objectif : mises en pause avec leur progression, puis reprises là où elles en étaient
@@ -269,6 +290,53 @@ function tempsTenu(etat, maintenant) {
   return total / 7 / 60;
 }
 
+// temps habituel par jour (min) : temps tenu sur 7 jours, sinon moyenne des jours joués avant aujourd'hui, sinon 10 min
+function tempsHabituel(etat, maintenant) {
+  const tenu = tempsTenu(etat, maintenant);
+  if (tenu) return tenu;
+  const auj = cleJour(maintenant);
+  const v = Object.entries(etat.profil.jours).filter(([j, s]) => j < auj && s > 0).map(([, s]) => s);
+  return v.length ? v.reduce((a, b) => a + b, 0) / v.length / 60 : SRS.OBJECTIF_DEFAUT;
+}
+
+// ---------- objectif du jour automatique (v13) ----------
+// On ne demande plus de temps par jour : on regarde combien de cartes la personne fait avant de s'arrêter,
+// et on lui propose un objectif un peu en dessous de son habitude, pour qu'elle l'atteigne presque toujours.
+// cartes jouées par jour (révisions et nouvelles cartes de Jouer ; ni les « à revoir », ni l'onglet Acquis), d'après le journal
+function cartesParJour(etat) {
+  const n = {};
+  for (const x of etat.journal) { if (x[5]) continue; const j = cleJour(x[0]); n[j] = (n[j] || 0) + 1; }
+  return n;
+}
+function cartesDuJour(etat, maintenant) { return cartesParJour(etat)[cleJour(maintenant)] || 0; }
+// objectif (en cartes) calculé pour aujourd'hui ; 0 = pas encore d'objectif (premier jour : on observe)
+// - 85 % de la moyenne des 7 derniers jours joués (les plus récents comptent plus)
+// - objectif raté la dernière fois : pas plus que ce qui a été fait ce jour-là
+// - pas joué hier : encore 20 % de moins
+function calculerObjectif(etat, maintenant) {
+  const auj = cleJour(maintenant), n = cartesParJour(etat), buts = etat.profil.buts || {};
+  const joues = Object.keys(n).filter((j) => j < auj).sort().slice(-SRS.BUT_JOURS);
+  if (!joues.length) return 0;
+  let somme = 0, poids = 0;
+  joues.forEach((j, i) => { somme += n[j] * (i + 1); poids += i + 1; });
+  let but = SRS.BUT_PART * somme / poids;
+  const dernier = joues[joues.length - 1];
+  if (buts[dernier] && n[dernier] < buts[dernier]) but = Math.min(but, n[dernier]);
+  if (dernier !== cleJour(plusJours(maintenant, -1))) but *= 0.8;
+  return Math.max(SRS.BUT_MIN, Math.round(but));
+}
+// objectif du jour : calculé une fois, puis gardé toute la journée (profil.buts ; on garde 60 jours)
+function objectifDuJour(etat, maintenant) {
+  const p = etat.profil, auj = cleJour(maintenant);
+  if (!p.buts) p.buts = {};
+  if (p.buts[auj] === undefined) {
+    p.buts[auj] = calculerObjectif(etat, maintenant);
+    const cles = Object.keys(p.buts).sort();
+    for (const c of cles.slice(0, Math.max(0, cles.length - 60))) delete p.buts[c];
+  }
+  return p.buts[auj];
+}
+
 // ---------- progression vers les 4 objectifs ----------
 // r2, r5, r6 : nombre de cartes au rang 2, 5, 6 ou plus ; acquis : cartes acquises (rang5 = ancien nom de r5)
 function objectifs(etat, ids) {
@@ -289,17 +357,16 @@ function noterHistorique(etat, ids, maintenant) {
 }
 
 // ---------- projection : on rejoue les séances jour par jour avec le rythme réel de l'utilisateur ----------
-// opts : jours (365), minutes (temps par jour : temps tenu sur 7 jours, sinon objectif), graine
+// opts : jours (365), minutes (temps par jour : le temps habituel de la personne), graine
 // retour : [[cartes au rang 5 et plus, cartes acquises, au rang 2 et plus, au rang 6 et plus], ...] pour aujourd'hui (indice 0) puis chaque jour
 function projeter(etat, cartes, maintenant, opts = {}) {
   const jours = opts.jours || 365;
-  const tenu = tempsTenu(etat, maintenant);
-  const minutes = opts.minutes !== undefined ? opts.minutes : (tenu !== null ? tenu : (etat.reglages.objectif || SRS.OBJECTIF_DEFAUT));
+  const minutes = opts.minutes !== undefined ? opts.minutes : tempsHabituel(etat, maintenant);
   const budget = minutes * 60;
   let graine = opts.graine || 12345;
   const alea = () => { graine |= 0; graine = graine + 0x6D2B79F5 | 0; let x = Math.imul(graine ^ graine >>> 15, 1 | graine); x = x + Math.imul(x ^ x >>> 7, 61 | x) ^ x; return ((x ^ x >>> 14) >>> 0) / 4294967296; };
   const e = { tuiles: {}, profil: etat.profil, reglages: etat.reglages };
-  for (const [id, t] of Object.entries(etat.tuiles)) e.tuiles[id] = Object.assign({}, t);
+  for (const [id, t] of Object.entries(etat.tuiles)) { e.tuiles[id] = Object.assign({}, t); delete e.tuiles[id].loin; }
   const taux = {}, sec = {};
   for (let r = 1; r <= 10; r++) taux[r] = opts.taux !== undefined ? opts.taux : tauxParRang(etat, r);
   for (const ty of ["ks", "kl", "ms", "ml"]) sec[ty] = opts.secondes || secondesParType(etat, ty);
@@ -485,6 +552,6 @@ function qcmLectureMot(mot, tousMots, parKanji, alea = Math.random) {
 const SRSLib = { SRS, H, J, nomRang, cleJour, debutJour, plusJours, marges, fenetre, etatVide, migrer, rangDe, introduite, placer, repondre,
   repondreAcquis, appliquerRetards, aJouer, aAvancer, prochaineOuverture, pauser, reprendre, debloquee, prochaineNouvelle,
   typeCarte, enregistrerReponse, ajouterTemps, tempsJour, tauxReussite, tauxParRang, secondesParCarte, secondesParType, estimation, tempsActif,
-  tendance, tempsTenu, objectifs, noterHistorique, projeter, melanger, decoupe, affichageLecture, reponseLecture, pieges, filtreSens,
+  tendance, tempsTenu, tempsHabituel, cartesParJour, cartesDuJour, calculerObjectif, objectifDuJour, prochaineLointaine, ramener, objectifs, noterHistorique, projeter, melanger, decoupe, affichageLecture, reponseLecture, pieges, filtreSens,
   qcmLecture, qcmSens, qcmSensMot, qcmLectureMot };
 if (typeof window !== "undefined") window.SRSLib = SRSLib;
