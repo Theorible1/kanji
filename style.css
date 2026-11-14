@@ -347,3 +347,23 @@ select.regler { background: var(--page); color: var(--texte); border: 1px solid 
 .courbe .mi-t { fill: var(--texte-2); font-size: 9px; font-family: var(--mono); opacity: .8; }
 .courbe .mi-p { stroke: var(--surface); stroke-width: 1.5; }
 .courbe .mi-d { font-size: 10px; font-weight: 700; font-family: var(--mono); paint-order: stroke; stroke: var(--surface); stroke-width: 3px; }
+
+/* v19 : étiquettes de ce qu'on apprend (on'yomi bleu, kun'yomi turquoise, sens du kanji rose, vocabulaire violet, kana gris) */
+:root { --t-on: #6aa6ec; --t-kun: #4fc3b5; --t-sens: #e58fb8; --t-voc: #a98bf0; --t-kana: #9aa5b1; }
+.badge { --c: var(--t-kana); display: inline-block; font-family: inherit; font-size: .7rem; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; white-space: nowrap;
+  padding: 2px 9px; border-radius: 99px; line-height: 1.5; color: color-mix(in srgb, var(--c) 62%, var(--texte));
+  border: 1px solid color-mix(in srgb, var(--c) 55%, transparent); background: color-mix(in srgb, var(--c) 15%, transparent); }
+.badge.on { --c: var(--t-on); } .badge.kun { --c: var(--t-kun); } .badge.sens { --c: var(--t-sens); } .badge.voc { --c: var(--t-voc); } .badge.kana { --c: var(--t-kana); }
+.q-type { text-align: center; margin: 10px 0 0; }
+.fiche-ligne { display: flex; align-items: center; gap: 10px; margin-top: 4px; flex-wrap: wrap; }
+.fiche-ligne .fiche-lect { margin-top: 0; }
+.cartes-k li > span:first-child { display: flex; align-items: center; gap: 8px; flex: none; white-space: nowrap; }
+.cartes-k .badge { font-size: .62rem; padding: 1px 7px; }
+/* v19 : bouton son (écouter une lecture) */
+.son { display: inline-flex; align-items: center; justify-content: center; width: 30px; height: 30px; margin: 0 2px 0 4px; padding: 0; vertical-align: middle;
+  border: 1px solid var(--grille); border-radius: 50%; background: transparent; font-size: .85rem; line-height: 1; cursor: pointer; font-family: var(--lat); }
+.son:active { background: color-mix(in srgb, var(--accent) 20%, transparent); }
+/* v19 : rappel de sauvegarde sur l'accueil */
+.rappel-sauv { display: block; width: 100%; margin: 0 0 14px; padding: 10px 12px; text-align: left; font: inherit; font-size: .88rem; cursor: pointer;
+  color: var(--texte); background: transparent; border: 1px dashed color-mix(in srgb, var(--orange) 60%, transparent); border-radius: var(--rayon); }
+.rappel-sauv span { display: block; margin-top: 2px; font-size: .78rem; color: var(--doux); }

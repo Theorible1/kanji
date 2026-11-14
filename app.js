@@ -142,10 +142,22 @@
     return m.seg.map(([t, l, c]) => (c === "f" || (tout && c === "k")) ? `<ruby>${esc(t)}<rt>${esc(l)}</rt></ruby>` : esc(t)).join("");
   }
   // prononciation d'un kanji : lecture au-dessus du kanji, kana qui suivent écrits après (一つ avec ひと au-dessus de 一)
-  function lectureHTML(k, l) {
+  // les on'yomi s'écrivent en katakana (les données restent en hiragana : les ids des cartes ne changent pas)
+  const kata = (s) => [...s].map((c) => (c >= "ぁ" && c <= "ゖ" ? String.fromCharCode(c.charCodeAt(0) + 0x60) : c)).join("");
+  function lectureHTML(k, l, type) {
     const d = L.decoupe(l);
-    return `${d.avant ? `(${esc(d.avant)})` : ""}<ruby>${esc(k)}<rt>${esc(d.rad)}</rt></ruby>${esc(d.okuri)}`;
+    return `${d.avant ? `(${esc(d.avant)})` : ""}<ruby>${esc(k)}<rt>${esc(type === "on" ? kata(d.rad) : d.rad)}</rt></ruby>${esc(d.okuri)}`;
   }
+  // ce qu'on apprend avec une carte : classe de couleur + nom complet (question) + nom court (listes)
+  const NOMS_LECT = { on: "on'yomi", kun: "kun'yomi", kana: "kana" };
+  function typeCarte(id) {
+    const x = info(id);
+    if (x.genre === "m") return { cl: "voc", nom: `Vocabulaire · ${x.type === "sens" ? "sens" : "lecture"}`, court: `vocabulaire · ${x.type === "sens" ? "sens" : "lecture"}` };
+    if (x.type === "sens") return { cl: "sens", nom: "Kanji · sens général", court: "sens général" };
+    const t = x.fiche.typesLect[x.fiche.lectures.indexOf(x.lecture)] || "kana";
+    return { cl: t, nom: `Kanji · ${NOMS_LECT[t]}`, court: NOMS_LECT[t] };
+  }
+  const badge = (t, court) => `<span class="badge ${t.cl}">${esc(court ? t.court : t.nom)}</span>`;
   // l'exemple utilise-t-il cette prononciation du kanji ? (sons modifiés compris : ひ -> び ou ぴ, いち -> いっ)
   const QUE_KANA = /^[\u3040-\u30ffー]*$/;
   function exempleUtilise(k, l, e) {
@@ -163,26 +175,47 @@
     return [...formes].some((f) => (debut !== null && fin !== null ? e.kana === debut + f + fin
       : debut !== null ? e.kana.startsWith(debut + f) : fin !== null ? e.kana.endsWith(f + fin) : e.kana.includes(f)));
   }
+  // ---------- son : lecture à voix haute par la synthèse vocale du téléphone (voix japonaise, hors ligne sur la plupart des téléphones) ----------
+  const son = (kana) => ("speechSynthesis" in window ? `<button class="son" data-son="${esc(kana)}" aria-label="Écouter">🔊</button>` : "");
+  const dire = (l) => { const d = L.decoupe(l); return d.avant + d.rad + d.okuri; };   // « ひと(つ) » -> ひとつ
+  function parler(texte) {
+    const voix = speechSynthesis.getVoices(), ja = voix.find((v) => /^ja/i.test(v.lang));
+    if (voix.length && !ja) return alerte("Pas de voix japonaise sur ce téléphone (Réglages > synthèse vocale).");
+    speechSynthesis.cancel();
+    const u = new SpeechSynthesisUtterance(texte);
+    u.lang = "ja-JP"; u.rate = 0.85;
+    if (ja) u.voice = ja;
+    speechSynthesis.speak(u);
+    window.__parle = texte;   // tests
+  }
+  document.addEventListener("click", (e) => {
+    const b = e.target.closest("[data-son]");
+    if (b) { e.stopPropagation(); parler(b.dataset.son); }
+  }, true);
   function ficheHTML(id, neutre) {
     const x = info(id);
     if (neutre) x.type = "";
     if (x.genre === "k") {
       const f = x.fiche;
-      const ex = f.exemples.map((e) => `<li class="${x.type === "lecture" && exempleUtilise(f.kanji, x.lecture, e) ? "fort" : ""}"><span class="jp">${esc(e.mot)}</span> <span class="kana">${esc(e.kana)}</span> <span class="fr">${esc(e.fr)}</span></li>`).join("");
+      const ex = f.exemples.map((e) => `<li class="${x.type === "lecture" && exempleUtilise(f.kanji, x.lecture, e) ? "fort" : ""}"><span class="jp">${esc(e.mot)}</span> <span class="kana">${esc(e.kana)}</span>${son(e.kana)} <span class="fr">${esc(e.fr)}</span></li>`).join("");
       const sens = f.sensCartes.map((s, i) => `<span class="${x.type === "sens" && x.idx === i ? "fort" : ""}">${esc(i ? s : maj(s))}</span>`).join(", ");
-      const lect = f.lectures.map((l) => `<span class="${x.type === "lecture" && x.lecture === l ? "fort" : ""}">${lectureHTML(f.kanji, l)}</span>`).join(" ・ ");
+      const lect = ["on", "kun", "kana"].map((t) => {
+        const ls = f.lectures.filter((_, i) => f.typesLect[i] === t);
+        return ls.length ? `<div class="fiche-ligne"><span class="badge ${t}">${NOMS_LECT[t]}</span><span class="fiche-lect jp">${ls.map((l) => `<span class="${x.type === "lecture" && x.lecture === l ? "fort" : ""}">${lectureHTML(f.kanji, l, t)}</span>${son(dire(l))}`).join(" ・ ")}</span></div>` : "";
+      }).join("");
       return `<div class="fiche">
         <div class="fiche-tete"><span class="fiche-k jp">${esc(f.kanji)}</span>${etoile(f.niveau)}
           <div><div class="fiche-sens">${sens}</div>
-          <div class="fiche-lect jp">${lect}</div>
+          ${lect}
           <div class="fiche-info">Kanji ${f.niveau} · ${f.traits} traits</div></div></div>
         <ul class="fiche-ex">${ex}</ul></div>`;
     }
     const m = x.mot;
     const comp = m.kanji.map((k) => `<li><span class="jp">${esc(k)}</span>${etoile(PAR_KANJI[k].niveau)} <span class="fr">${esc(PAR_KANJI[k].sens)}</span></li>`).join("");
     return `<div class="fiche">
+      <div class="fiche-ligne">${badge({ cl: "voc", court: "vocabulaire" }, true)}</div>
       <div class="fiche-mot jp">${motHTML(m, true)}</div>
-      <div class="fiche-lect jp ${x.type === "lecture" ? "fort" : ""}">${esc(m.kana)}</div>
+      <div class="fiche-lect jp"><span class="${x.type === "lecture" ? "fort" : ""}">${esc(m.kana)}</span>${son(m.kana)}</div>
       <div class="fiche-sens ${x.type === "sens" ? "fort" : ""}">${esc(maj(m.fr))}</div>
       <div class="fiche-info">Mot ${m.phase === "combo" ? "de vocabulaire niveau 1 (kanji tous à connaître)" : "de vocabulaire niveau 2 (furigana sur les kanji hors liste)"}${m.special ? " · lecture particulière" : ""}</div>
       <ul class="fiche-ex">${comp}</ul></div>`;
@@ -232,6 +265,7 @@
       consigne = "Que signifie ce kanji ?" + (x.fiche.sensCartes.length > 1 ? ` (un de ses ${x.fiche.sensCartes.length} sens)` : "");
     } else if (x.genre === "k") {
       g = L.qcmLecture(x.fiche, x.lecture, FICHES);
+      if (typeCarte(id).cl === "on") { g.options = g.options.map(kata); g.bonne = kata(g.bonne); }
       const aff = L.affichageLecture(x.fiche.kanji, x.lecture);
       visuel = aff === x.fiche.kanji ? `<div class="q-kanji jp">${esc(aff)}</div>` : grand(aff, esc(aff));
       consigne = "Comment ça se lit ?";
@@ -248,6 +282,7 @@
         <button class="quitter ${opts.bonus ? "fort" : ""}" id="b-quit" aria-label="Arrêter">✕</button></div>
       ${opts.chrono ? `<div class="barre"><div id="barre"></div></div>` : ""}
       ${opts.reste ? `<div class="encore">Encore <b>${opts.reste}</b> avant l'objectif</div>` : ""}
+      <div class="q-type">${badge(typeCarte(id))}</div>
       ${visuel}
       <p class="consigne">${consigne}</p>
       <div class="options">
@@ -392,7 +427,6 @@
       return juste && n % 5 === 0 ? [`${n >= 20 ? "🚀" : n >= 15 ? "💥" : n >= 10 ? "🔥" : "⚡"} ${n} d'affilée !`] : [];
     };
     const puis = (fetes) => (fetes.length ? feter(fetes, suivante) : suivante());
-    const nomCarte = (id) => { const x = info(id); return `${x.genre === "k" ? "Kanji" : "Mot"} · ${x.type}`; };
     const compter = (id, juste, rang) => L.enregistrerReponse(etat, juste, L.tempsActif(etat, tempsQuestion()), maintenant(), L.typeCarte(id), rang);
     // prochaine carte : rattrapage (3 cartes après l'erreur), cartes à échéance, cartes avancées (jour à venir trop chargé), nouvelle carte
     const choisir = (t) => {
@@ -469,7 +503,7 @@
     };
     const nouvelle = (id) => {
       const x = info(id);
-      poser(id, { jeu: true, bonus: session.bonus, reste: session.reste, titre: `Nouvelle carte · ${nomCarte(id)}`, texteErreur: "Carte ajoutée au rang 1 : tu la revois demain." }, (res) => {
+      poser(id, { jeu: true, bonus: session.bonus, reste: session.reste, titre: "Nouvelle carte", texteErreur: "Carte ajoutée au rang 1 : tu la revois demain." }, (res) => {
         session.depuis++;
         if (res !== "juste") {
           compter(id, false, 0); serie(false);
@@ -478,8 +512,9 @@
         const niveaux = [["tres_peu", "Très peu (c'était de la chance)"], ["un_peu", "Un peu"], ["moyen", "Moyen"], ["bien", "Bien"], ["tres_bien", "Très bien"]];
         const aff = x.genre === "m" ? motHTML(x.mot, false) : esc(x.type === "lecture" ? L.affichageLecture(x.cle, x.lecture) : x.cle);
         // tant que la carte n'est pas notée, rien n'est enregistré : quitter ici (croix, appli fermée) = carte jamais jouée
-        ecran.innerHTML = `<div class="q-tete"><span>Nouvelle carte · ${nomCarte(id)}</span><button class="quitter ${session.bonus ? "fort" : ""}" id="b-quit" aria-label="Arrêter">✕</button></div>
+        ecran.innerHTML = `<div class="q-tete"><span>Nouvelle carte</span><button class="quitter ${session.bonus ? "fort" : ""}" id="b-quit" aria-label="Arrêter">✕</button></div>
           <div class="retour ok">Juste !</div>
+          <div class="q-type">${badge(typeCarte(id))}</div>
           <div class="q-mot petit jp">${aff}</div>
           <p class="consigne">Tu le connaissais comment ?</p>
           <div class="options">${niveaux.map(([k, tx]) => `<button class="opt" data-c="${k}">${tx}</button>`).join("")}</div>`;
@@ -699,6 +734,16 @@
     zone.addEventListener("touchend", (e) => { if (e.touches.length < 2) pince = null; });
     window.__zoom = { zoomer, niveau: () => z };   // tests
   }
+  // rappel discret de sauvegarde : la progression ne vit que sur le téléphone. Affiché si la dernière sauvegarde
+  // (ou, sans sauvegarde, la première réponse, à défaut la plus ancienne carte) date de plus de JOURS_SAUVEGARDE jours.
+  const JOURS_SAUVEGARDE = 14;
+  function rappelSauvegarde(t) {
+    const bases = Object.values(etat.tuiles).map((x) => x.base).filter(Number.isFinite);
+    const depuis = etat.profil.sauvee || (etat.journal.length ? etat.journal[0][0] : bases.length ? Math.min(...bases) : null);
+    if (!depuis || t - depuis < JOURS_SAUVEGARDE * L.J) return "";
+    const n = Math.floor((t - depuis) / L.J);
+    return `<button class="rappel-sauv" id="b-rappel">💾 Pense à sauvegarder ta progression <span>${etat.profil.sauvee ? `dernière sauvegarde il y a ${n} jours` : "aucune sauvegarde pour l'instant"}</span></button>`;
+  }
   function accueil() {
     onglets("accueil");
     clearInterval(minuteur);
@@ -721,8 +766,10 @@
       <div class="carte-info temps-jour">
         <div class="tj-texte"><span>Aujourd'hui</span><b>${fini ? "✓ " : ""}${nb} carte${nb > 1 ? "s" : ""} · ${min} min</b></div>
       </div>
+      ${rappelSauvegarde(t)}
       <div class="carte-info" id="bloc-courbe">${courbe(P)}</div>`;
     $("#b-jouer").onclick = jouer;
+    if ($("#b-rappel")) $("#b-rappel").onclick = () => { vueOptions(); const b = $("#b-sauv"); if (b) b.scrollIntoView({ block: "center" }); };
     const boutonsAgrandir = () => document.querySelectorAll("[data-g]").forEach((b) => b.onclick = agrandir);
     boutonsAgrandir();
     if (!P && assezDeDonnees()) setTimeout(() => {
@@ -806,8 +853,9 @@
   const NOMS_REGLAGE = ["Jamais vue", ...Array.from({ length: 10 }, (_, i) => `Rang ${i + 1}`), "Acquis"];
   function ficheKanji(k, modif) {
     const act = cartesActives(), p = maitrise(k);
-    const nomCarteK = (x) => (x.type === "sens" ? `Sens « ${esc(x.fiche.sensCartes[x.idx])} »` : `Lecture <span class="jp">${esc(L.reponseLecture(x.lecture))}</span>`);
-    const nomCarteM = (x) => `<span class="jp">${esc(x.cle)}</span> · ${x.type === "sens" ? "sens" : "lecture"}`;
+    const idDe = (x) => (x.genre === "m" ? `m:${x.cle}:${x.type}` : x.type === "sens" ? `k:${x.cle}:s${x.idx}` : `k:${x.cle}:l:${x.lecture}`);
+    const nomCarteK = (x) => `${badge(typeCarte(idDe(x)), true)} ` + (x.type === "sens" ? `« ${esc(x.fiche.sensCartes[x.idx])} »` : `<span class="jp">${esc(typeCarte(idDe(x)).cl === "on" ? kata(L.reponseLecture(x.lecture)) : L.reponseLecture(x.lecture))}</span>`);
+    const nomCarteM = (x) => `<span class="jp">${esc(x.cle)}</span> ${badge(typeCarte(idDe(x)), true)}`;
     const selecteur = (id) => `<select class="regler" data-id="${esc(id)}" aria-label="Rang de la carte">${NOMS_REGLAGE.map((n, r) => `<option value="${r}" ${L.rangDe(etat, id) === r ? "selected" : ""}>${n}</option>`).join("")}</select>`;
     const lignes = PROPRES[k].map((id) => `<li><span>${nomCarteK(info(id))}</span>${modif ? selecteur(id) : `<span>${etatCarte(id)}</span>`}</li>`).join("");
     // cartes des mots qui utilisent ce kanji (niveaux cochés) : réglables aussi dans « Modifier les cartes »
@@ -996,6 +1044,7 @@
       a.download = `kanji-sauvegarde-${new Date().toISOString().slice(0, 10)}.json`;
       a.click();
       setTimeout(() => URL.revokeObjectURL(a.href), 2000);
+      etat.profil.sauvee = maintenant(); sauver();
     };
     $("#f-rest").onchange = (e) => {
       const fi = e.target.files[0]; if (!fi) return;
