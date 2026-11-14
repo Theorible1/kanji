@@ -341,3 +341,9 @@ select.regler { background: var(--page); color: var(--texte); border: 1px solid 
 .graphe-nom { display: inline-flex; align-items: center; gap: 6px; }
 .zoom-tete { flex-wrap: wrap; column-gap: 12px; font-size: .9rem; }
 .zoom-tete .quitter { margin-left: auto; }
+
+/* ---------- v16 : barre pour les 4 objectifs, repères 50 % / 75 % et date estimée sur le graphique ---------- */
+.courbe .mi { stroke: var(--texte-2); stroke-dasharray: 3 3; opacity: .55; }
+.courbe .mi-t { fill: var(--texte-2); font-size: 9px; font-family: var(--mono); opacity: .8; }
+.courbe .mi-p { stroke: var(--surface); stroke-width: 1.5; }
+.courbe .mi-d { font-size: 10px; font-weight: 700; font-family: var(--mono); paint-order: stroke; stroke: var(--surface); stroke-width: 3px; }

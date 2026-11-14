@@ -211,6 +211,7 @@
     { nom: "Maître des kanji", regle: "toutes les cartes acquises", s: 11, part: 1 },
   ];
   const AVEC_COURBE = OBJECTIFS.filter((x) => x.courbe);
+  const REPERES_OBJ = [0.5, 0.75];          // v16 : repères du graphique (50 % de l'objectif, puis 75 %)
   const cibleObjectif = (o, tot) => Math.ceil(o.part * tot);
   // objectif du jour atteint (le feu d'artifice a déjà été tiré aujourd'hui)
   const jourFini = () => { const j = L.cleJour(maintenant()); return !!(etat.profil.atteints || {})[j] || etat.profil.fini === j; };
@@ -608,10 +609,11 @@
       const pts = h.filter(([, v]) => valeurH(v, x.s) !== undefined).map(([c, v]) => `${xh(c).toFixed(1)},${y(valeurH(v, x.s) / cibleObjectif(x, v[2])).toFixed(1)}`);
       return pts.length >= 2 ? `<polyline points="${pts.join(" ")}" style="stroke:${x.col}"/>` : "";
     };
+    // échelle de l'estimation : un tiers de la largeur pour le 1er mois, un tiers jusqu'à 6 mois, un tiers jusqu'à 1 an
+    const xpJ = (j) => x0 + (d - x0) * (j <= 30 ? j / 90 : j <= 182 ? 1 / 3 + (j - 30) / 456 : 2 / 3 + (j - 182) / 549);
     let prev = "";
     if (P) {
-      // échelle : un tiers de la largeur pour le 1er mois, un tiers jusqu'à 6 mois, un tiers jusqu'à 1 an
-      const xp = (j) => x0 + (d - x0) * (j <= 30 ? j / 90 : j <= 182 ? 1 / 3 + (j - 30) / 456 : 2 / 3 + (j - 182) / 549);
+      const xp = xpJ;
       const jours = []; for (let j = 0; j < P.length; j += (j < 30 ? 1 : 4)) jours.push(j);
       if (jours[jours.length - 1] !== P.length - 1) jours.push(P.length - 1);
       const ligneP = (x) => jours.map((j) => `${xp(j).toFixed(1)},${y(P[j][3 + x.s] / cibleObjectif(x, tot)).toFixed(1)}`).join(" ");
@@ -619,10 +621,36 @@
         ${REPERES.map(([j, nom], i) => `<line x1="${xp(j).toFixed(1)}" x2="${xp(j).toFixed(1)}" y1="6" y2="${bas}" class="rep"/><text x="${xp(j).toFixed(1)}" y="${Ht - 6}" text-anchor="${i === 2 ? "end" : "middle"}" class="rep-t">${nom}</text>`).join("")}
         ${AVEC_COURBE.map((x) => `<polyline points="${ligneP(x)}" class="est" style="stroke:${x.col}"/>`).join("")}`;
     }
+    // v16 : repère visuel à 50 % de l'objectif, puis à 75 % une fois les 50 % dépassés, puis plus rien après 75 % ;
+    // pastille à la date où l'estimation atteint le repère (dans l'année estimée)
+    const actuel = h[h.length - 1][1];
+    const visees = AVEC_COURBE.map((x) => {
+      const f = valeurH(actuel, x.s) / cibleObjectif(x, tot);
+      const r = REPERES_OBJ.find((v) => f < v);
+      if (r === undefined) return null;
+      let date = null;
+      if (P) {
+        const j = P.findIndex((p) => p[3 + x.s] / cibleObjectif(x, tot) >= r);
+        if (j >= 0) date = { j, x: xpJ(j) };
+      }
+      return { x, r, date };
+    }).filter(Boolean);
+    const niveaux = [...new Set(visees.map((v) => v.r))];
+    let reperes = niveaux.map((r) => `<line x1="${g}" x2="${d}" y1="${y(r).toFixed(1)}" y2="${y(r).toFixed(1)}" class="mi"/><text x="${g + 2}" y="${(y(r) - 3).toFixed(1)}" class="mi-t">${r * 100} %</text>`).join("");
+    const avecDate = visees.filter((v) => v.date);
+    reperes += avecDate.map((v, i) => {
+      const px = v.date.x, py = y(v.r);
+      const autre = avecDate.find((w, k) => k < i && w.r === v.r && Math.abs(w.date.x - px) < 34);
+      const ty = autre ? py + 13 : py - 5;                   // deux dates proches : la 2e sous le repère
+      const ancre = px > d - 18 ? "end" : px < g + 18 ? "start" : "middle";
+      const dt = new Date(t1 + v.date.j * 864e5);
+      const txt = `${String(dt.getDate()).padStart(2, "0")}/${String(dt.getMonth() + 1).padStart(2, "0")}`;
+      return `<circle cx="${px.toFixed(1)}" cy="${py.toFixed(1)}" r="4" class="mi-p" style="fill:${v.x.col}"/><text x="${px.toFixed(1)}" y="${ty.toFixed(1)}" text-anchor="${ancre}" class="mi-d" style="fill:${v.x.col}">${txt}</text>`;
+    }).join("");
     return `<svg viewBox="0 0 ${W} ${Ht}" class="courbe" role="img" aria-label="${esc(AVEC_COURBE.map((x) => x.nom).join(" et "))} : progression réelle et estimation">
       <line x1="${g}" x2="${d}" y1="${y(1)}" y2="${y(1)}" class="but"/><text x="${g + 2}" y="${y(1) + 11}" class="but-t">100 %</text>
       <line x1="${g}" x2="${d}" y1="${y(0)}" y2="${y(0)}" class="axe"/>${prev}
-      ${AVEC_COURBE.map(reel).join("")}</svg>`;
+      ${AVEC_COURBE.map(reel).join("")}${reperes}</svg>`;
   }
   const titreGraphe = () => AVEC_COURBE.map((x) => `<span class="graphe-nom">${pastille(x)}${x.nom}</span>`).join("");
   function courbe(P) {
@@ -630,9 +658,9 @@
     // avancement d'un objectif (arrondi vers le bas : 100 % seulement s'il est atteint)
     const part = (v, x) => Math.min(1, v / cibleObjectif(x, tot));
     const pc = (v, x) => `${Math.floor(part(v, x) * 100)} %`;
-    // objectif avec courbe : pastille de sa couleur ; indicateur : petite barre d'avancement
+    // v16 : les 4 objectifs ont leur barre d'avancement (de la couleur de leur pastille pour combat et feu)
     const ligne = (x) => `<div class="obj ${x.courbe ? "" : "obj-ind"}">${pastille(x)}<span>${x.nom}</span><b>${Math.min(o.seuils[x.s], cibleObjectif(x, tot))}/${cibleObjectif(x, tot)}</b>
-        ${x.courbe ? "" : `<div class="obj-barre"><div style="width:${(part(o.seuils[x.s], x) * 100).toFixed(1)}%"></div></div>`}</div>`;
+        <div class="obj-barre"><div style="width:${(part(o.seuils[x.s], x) * 100).toFixed(1)}%${x.col ? `;background:${x.col}` : ""}"></div></div></div>`;
     const tete = OBJECTIFS.map(ligne).join("");
     if (h.length < 2 && !P) return `${tete}${assezDeDonnees() ? `<p class="aide legende-c">Calcul de l'estimation…</p>` : ""}`;
     let table = "";
@@ -905,9 +933,9 @@
         <summary>Règles de l'appli</summary>
         <h3>Accueil</h3>
         <ul class="regles">
-          <li><b>Les 4 objectifs</b> : ${OBJECTIFS.map((o, i) => `${i + 1}. <b>${o.nom}</b> : ${o.regle}`).join(" ; ")}. Tout compte les cartes des niveaux que tu as cochés. Tout découvert et Maître des kanji ont une barre d'avancement.</li>
+          <li><b>Les 4 objectifs</b> : ${OBJECTIFS.map((o, i) => `${i + 1}. <b>${o.nom}</b> : ${o.regle}`).join(" ; ")}. Tout compte les cartes des niveaux que tu as cochés. Chacun a sa barre d'avancement.</li>
           <li><b>Aujourd'hui</b> : le nombre de cartes faites et le temps passé.</li>
-          <li><b>Courbes</b> : Prêt pour le combat et En feu, sur un seul graphique, chacune de la couleur de sa pastille ; leur hauteur est l'avancement vers l'objectif (100 % = atteint). Trait plein : ta progression réelle, à partir du 2e jour. Pointillés : une estimation à 1 mois, 6 mois et 1 an, calculée d'après ton rythme réel (temps par jour, réussite, vitesse) et refaite chaque jour, à partir d'une vingtaine de réponses. Ce n'est pas une garantie. « Agrandir » ouvre le graphique en grand : pince avec deux doigts ou touche + et − pour zoomer.</li>
+          <li><b>Courbes</b> : Prêt pour le combat et En feu, sur un seul graphique, chacune de la couleur de sa pastille ; leur hauteur est l'avancement vers l'objectif (100 % = atteint). Trait plein : ta progression réelle, à partir du 2e jour. Pointillés : une estimation à 1 mois, 6 mois et 1 an, calculée d'après ton rythme réel (temps par jour, réussite, vitesse) et refaite chaque jour, à partir d'une vingtaine de réponses. Ce n'est pas une garantie. Une ligne marque 50 % de l'objectif, avec une pastille à la date où l'estimation l'atteint ; une fois les 50 % dépassés, elle passe à 75 %, puis disparaît. « Agrandir » ouvre le graphique en grand : pince avec deux doigts ou touche + et − pour zoomer.</li>
           <li><b>Tableau</b> : l'avancement estimé des 4 objectifs (100 % = objectif atteint).</li>
         </ul>
         <h3>Jouer</h3>
