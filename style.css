@@ -333,3 +333,11 @@ main { padding-top: calc(16px + env(safe-area-inset-top)); }
 select.regler { background: var(--page); color: var(--texte); border: 1px solid var(--bord-fort); border-radius: 8px; padding: 6px 8px; font: inherit; font-size: .85rem; min-height: 36px; }
 .cartes-k li { align-items: center; }
 .second:disabled { opacity: .45; }
+
+/* ---------- v15 : 4 objectifs, un seul graphique (Prêt pour le combat et En feu), barres des indicateurs ---------- */
+.obj-barre { flex-basis: 100%; height: 5px; border-radius: 999px; background: var(--grille); overflow: hidden; margin: 3px 0 6px 16px; }
+.obj-barre > div { height: 100%; background: var(--accent); border-radius: 999px; }
+.graphe-t { flex-wrap: wrap; column-gap: 12px; }
+.graphe-nom { display: inline-flex; align-items: center; gap: 6px; }
+.zoom-tete { flex-wrap: wrap; column-gap: 12px; font-size: .9rem; }
+.zoom-tete .quitter { margin-left: auto; }
