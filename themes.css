@@ -1,95 +1,302 @@
-/* Généré par outils/faire_themes.py à partir du dashboard SUPERVISOR3000 : ne pas modifier à la main. */
-:root[data-theme="light"]{color-scheme:light;--page:#f6f6f3;--surface:#fcfcfb;--surface-2:#f1f0ec;--texte:#0b0b0b;--texte-2:#52514e;--doux:#898781;--grille:#e1e0d9;--axe:#c3c2b7;--bord:rgba(11,11,11,.10);--bord-fort:rgba(11,11,11,.18);--accent:#2a78d6;--accent-ink:#1c5cab;--accent-piste:#cde2fb;--vert:#0ca30c;--vert-ink:#006300;--orange:#fab219;--rouge:#d03b3b;--rouge-ink:#b02a2a;--rayon:12px;--lueur:42,120,214;--haut:#f6f6f3;--or:#fab219}
-:root[data-theme="dark"]{color-scheme:dark;--page:#0d0d0d;--surface:#1a1a19;--surface-2:#242422;--texte:#f0efec;--texte-2:#c3c2b7;--doux:#898781;--grille:#2c2c2a;--axe:#383835;--bord:rgba(255,255,255,.10);--bord-fort:rgba(255,255,255,.2);--accent:#3987e5;--accent-ink:#86b6ef;--accent-piste:#16304f;--vert:#0ca30c;--vert-ink:#3cc43c;--orange:#fab219;--rouge:#d03b3b;--rouge-ink:#ee6a6a;--rayon:12px;--lueur:57,135,229;--haut:#0d0d0d;--or:#fab219}
-:root[data-theme="papier"]{color-scheme:light;--page:#efe6d3;--surface:#f9f3e6;--surface-2:#efe5cf;--texte:#2b2620;--texte-2:#5b5244;--doux:#867b69;--grille:#e2d6bd;--axe:#c8b998;--bord:rgba(60,45,20,.13);--bord-fort:rgba(60,45,20,.24);--accent:#2f6db5;--accent-ink:#22528a;--accent-piste:#d9e2ec;--vert:#2e8b2e;--vert-ink:#1c641c;--orange:#d99a1e;--rouge:#c0392b;--rouge-ink:#9c2a1f;--rayon:12px;--lueur:47,109,181;--haut:#efe6d3;--or:#d99a1e}
-:root[data-theme="penombre"]{color-scheme:dark;--page:#1b1d21;--surface:#23262b;--surface-2:#2b2f35;--texte:#dcd9d2;--texte-2:#aaa69e;--doux:#7f7c76;--grille:#33373e;--axe:#444950;--bord:rgba(255,255,255,.08);--bord-fort:rgba(255,255,255,.16);--accent:#6d9fd6;--accent-ink:#9cc0e8;--accent-piste:#22364d;--vert:#4f9d5a;--vert-ink:#86c890;--orange:#c9a14a;--rouge:#c46060;--rouge-ink:#e59494;--rayon:12px;--lueur:109,159,214;--haut:#1b1d21;--or:#c9a14a}
-:root[data-theme="futur-confort"]{color-scheme:dark;--page:#16181c;--surface:#1d2025;--surface-2:#252930;--texte:#e6dfcc;--texte-2:#b2ab96;--doux:#827d6f;--grille:#2c3038;--axe:#3b4048;--bord:rgba(217,178,95,.13);--bord-fort:rgba(217,178,95,.26);--accent:#d9b25f;--accent-ink:#e8c97f;--accent-piste:#3a3220;--vert:#7fb98a;--vert-ink:#a2d1aa;--orange:#e0a458;--rouge:#d47f6f;--rouge-ink:#e6a395;--lueur:217,178,95;--haut:#20242b;--rayon:4px;--or:#d9b25f}
-:root[data-theme="futur-confort-pervenche"]{color-scheme:dark;--page:#16181c;--surface:#1d2025;--surface-2:#252930;--texte:#e6dfcc;--texte-2:#b2ab96;--doux:#827d6f;--grille:#2c3038;--axe:#3b4048;--bord:rgba(154,152,208,.13);--bord-fort:rgba(154,152,208,.26);--accent:#9a98d0;--accent-ink:#c0bfe8;--accent-piste:#2d2c42;--vert:#7fb98a;--vert-ink:#a2d1aa;--orange:#e0a458;--rouge:#d47f6f;--rouge-ink:#e6a395;--lueur:154,152,208;--haut:#20242b;--rayon:4px;--or:#d9b25f}
-:root[data-theme="futur-confort-ivoire"]{color-scheme:dark;--page:#16181c;--surface:#1d2025;--surface-2:#252930;--texte:#e6dfcc;--texte-2:#b2ab96;--doux:#827d6f;--grille:#2c3038;--axe:#3b4048;--bord:rgba(189,181,160,.12);--bord-fort:rgba(189,181,160,.24);--accent:#b8b09b;--accent-ink:#ddd5c0;--accent-piste:#34322c;--vert:#7fb98a;--vert-ink:#a2d1aa;--orange:#e0a458;--rouge:#d47f6f;--rouge-ink:#e6a395;--lueur:189,181,160;--haut:#20242b;--rayon:4px;--or:#d9b25f}
-:root[data-theme="futuriste"]{color-scheme:dark;--page:#05070f;--surface:#0a1020;--surface-2:#101834;--texte:#d8f3ff;--texte-2:#8fb6cc;--doux:#5e7d92;--grille:#16213d;--axe:#22325c;--bord:rgba(0,229,255,.16);--bord-fort:rgba(0,229,255,.34);--accent:#00d8f0;--accent-ink:#5ff0ff;--accent-piste:#073246;--vert:#18e39a;--vert-ink:#3dffb0;--orange:#ffd23f;--rouge:#ff3d81;--rouge-ink:#ff78a8;--lueur:0,229,255;--haut:#0d1838;--rayon:4px;--or:#ffd23f}
-:root[data-theme="futur-ambre"]{color-scheme:dark;--page:#0c0802;--surface:#160f05;--surface-2:#22180a;--texte:#ffe9c4;--texte-2:#d1ad74;--doux:#8f7448;--grille:#2a1e0d;--axe:#3d2c12;--bord:rgba(255,170,40,.18);--bord-fort:rgba(255,170,40,.36);--accent:#ffae1f;--accent-ink:#ffc865;--accent-piste:#3a2606;--vert:#7ee05a;--vert-ink:#a6f07e;--orange:#ffe14d;--rouge:#ff4d3d;--rouge-ink:#ff8a7a;--lueur:255,170,40;--haut:#241505;--rayon:4px;--or:#ffe14d}
-:root[data-theme="futur-vert"]{color-scheme:dark;--page:#020a04;--surface:#04140a;--surface-2:#072011;--texte:#c8ffd8;--texte-2:#7fcf98;--doux:#4f8a62;--grille:#0b2a16;--axe:#124022;--bord:rgba(57,255,120,.16);--bord-fort:rgba(57,255,120,.34);--accent:#39ff78;--accent-ink:#8affb0;--accent-piste:#08361a;--vert:#d4ff5e;--vert-ink:#e2ff8f;--orange:#ffd23f;--rouge:#ff5f56;--rouge-ink:#ff8f88;--lueur:57,255,120;--haut:#06200f;--rayon:4px;--or:#ffd23f}
-:root[data-theme="futur-violet"]{color-scheme:dark;--page:#08040f;--surface:#120a20;--surface-2:#1b1030;--texte:#efe2ff;--texte-2:#b79ad8;--doux:#7b6596;--grille:#241640;--axe:#34205a;--bord:rgba(190,110,255,.18);--bord-fort:rgba(190,110,255,.36);--accent:#b66dff;--accent-ink:#d5a8ff;--accent-piste:#2b1450;--vert:#2ee6a8;--vert-ink:#5cf5c0;--orange:#ffd23f;--rouge:#ff4f9a;--rouge-ink:#ff86b8;--lueur:182,109,255;--haut:#1d0d3a;--rayon:4px;--or:#ffd23f}
-:root[data-theme="synthwave"]{color-scheme:dark;--page:#14062a;--surface:#1c0b36;--surface-2:#271046;--texte:#fbe9ff;--texte-2:#cba6e3;--doux:#8d6ba8;--grille:#2f1752;--axe:#46217a;--bord:rgba(255,92,205,.2);--bord-fort:rgba(255,92,205,.42);--accent:#ff5ccd;--accent-ink:#ff9be3;--accent-piste:#45123d;--vert:#36f9f6;--vert-ink:#7ffcfa;--orange:#fede5d;--rouge:#ff7a45;--rouge-ink:#ffa37f;--rayon:12px;--lueur:255,92,205;--haut:#14062a;--or:#fede5d}
-:root[data-theme="holo"]{color-scheme:light;--page:#eef3f8;--surface:rgba(255,255,255,.72);--surface-2:#e8eef6;--texte:#0f1b2d;--texte-2:#46566c;--doux:#7f8ea3;--grille:#dde5ef;--axe:#c3cfdd;--bord:rgba(80,110,160,.18);--bord-fort:rgba(80,110,160,.3);--accent:#3a6df0;--accent-ink:#2448b8;--accent-piste:#d6e0fb;--vert:#10a37f;--vert-ink:#086650;--orange:#e3a008;--rouge:#e5484d;--rouge-ink:#b4232a;--rayon:12px;--lueur:58,109,240;--haut:#eef3f8;--or:#e3a008}
-:root[data-theme="cyberpunk"]{color-scheme:dark;--page:#0a0a0a;--surface:#121212;--surface-2:#1c1c1c;--texte:#f2f2e9;--texte-2:#b9b8a8;--doux:#77766a;--grille:#262626;--axe:#3a3a3a;--bord:rgba(252,238,10,.18);--bord-fort:rgba(252,238,10,.42);--accent:#fcee0a;--accent-ink:#fff35c;--accent-piste:#3a3700;--vert:#00f0ff;--vert-ink:#5cf7ff;--orange:#ff9f1c;--rouge:#ff003c;--rouge-ink:#ff5c7a;--rayon:12px;--lueur:252,238,10;--haut:#0a0a0a;--or:#ff9f1c}
-:root[data-theme="licorne"]{color-scheme:light;--page:#fdf2fb;--surface:#fffaff;--surface-2:#f6e8f7;--texte:#3b2445;--texte-2:#6a4f75;--doux:#9c86a5;--grille:#efdcf1;--axe:#dcc3e0;--bord:rgba(120,60,140,.14);--bord-fort:rgba(120,60,140,.26);--accent:#b545cf;--accent-ink:#8e2aa6;--accent-piste:#f1d2f7;--vert:#1fae95;--vert-ink:#0b6656;--orange:#f4a73b;--rouge:#e94f86;--rouge-ink:#b8285c;--rayon:12px;--lueur:181,69,207;--haut:#fdf2fb;--or:#f4a73b}
-:root[data-theme="lcd"]{color-scheme:light;--page:#cfc8b8;--surface:#b9c4a9;--surface-2:#acb89b;--texte:#1d2418;--texte-2:#36402f;--doux:#566250;--grille:#a3af94;--axe:#8a9679;--bord:rgba(29,36,24,.22);--bord-fort:rgba(29,36,24,.45);--accent:#1d2418;--accent-ink:#1d2418;--accent-piste:#a6b296;--vert:#2f5d2a;--vert-ink:#1f4a1c;--orange:#8a5a10;--rouge:#8c1c13;--rouge-ink:#7a1610;--rayon:12px;--lueur:29,36,24;--haut:#cfc8b8;--or:#8a5a10}
-:root[data-theme="cartoon"]{color-scheme:light;--page:#fff6dc;--surface:#ffffff;--surface-2:#fff1c2;--texte:#1a1a1a;--texte-2:#3b3b3b;--doux:#6b6b6b;--grille:#efe0ad;--axe:#1a1a1a;--bord:rgba(26,26,26,.22);--bord-fort:#1a1a1a;--accent:#2f80ed;--accent-ink:#1655b0;--accent-piste:#d6e6ff;--vert:#27ae60;--vert-ink:#167a3e;--orange:#f2c94c;--rouge:#eb5757;--rouge-ink:#b3261e;--rayon:16px;--lueur:47,128,237;--haut:#fff6dc;--or:#f2c94c}
-/* ---------- décors des thèmes (adaptés des décors du dashboard aux éléments de l'appli) ---------- */
-/* par défaut sous un thème choisi : fond uni (la grille de fond est réservée à la famille futuriste) */
+/* Généré par outils/faire_themes.py à partir de THEMATOR3000 : ne pas modifier à la main. */
+/* base commune : fond uni sous un thème choisi ; les décors de THEMATOR3000 (traduits) viennent ensuite */
 :root[data-theme] body { background: var(--page); }
-:root[data-theme="light"] h1, :root[data-theme="dark"] h1, :root[data-theme="papier"] h1, :root[data-theme="penombre"] h1,
-:root[data-theme="light"] h2, :root[data-theme="dark"] h2, :root[data-theme="papier"] h2, :root[data-theme="penombre"] h2 { letter-spacing: .04em; }
 
-/* famille futuriste : grille néon, halo en haut, lueurs */
-:root[data-theme^="futur"] body { background:
-  linear-gradient(rgba(var(--lueur), .035) 1px, transparent 1px) 0 0 / 32px 32px,
-  linear-gradient(90deg, rgba(var(--lueur), .035) 1px, transparent 1px) 0 0 / 32px 32px,
-  radial-gradient(ellipse at top, var(--haut), var(--page) 60%) fixed; background-color: var(--page); }
-:root[data-theme="futuriste"] h1, :root[data-theme="futur-ambre"] h1, :root[data-theme="futur-violet"] h1 { text-shadow: 0 0 12px rgba(var(--lueur), .55); }
-:root[data-theme="futuriste"] .gros, :root[data-theme="futur-ambre"] .gros, :root[data-theme="futur-vert"] .gros, :root[data-theme="futur-violet"] .gros { box-shadow: 0 0 12px rgba(var(--lueur), .5); }
-:root[data-theme="futuriste"] .carte-info, :root[data-theme="futuriste"] .panneau, :root[data-theme="futur-ambre"] .carte-info, :root[data-theme="futur-ambre"] .panneau,
-:root[data-theme="futur-vert"] .carte-info, :root[data-theme="futur-vert"] .panneau, :root[data-theme="futur-violet"] .carte-info, :root[data-theme="futur-violet"] .panneau { box-shadow: 0 0 0 1px rgba(var(--lueur), .06), 0 0 26px rgba(var(--lueur), .07); }
-/* futuriste confort : grille plus discrète, aucune lueur */
-:root[data-theme^="futur-confort"] body { background:
-  linear-gradient(rgba(var(--lueur), .022) 1px, transparent 1px) 0 0 / 32px 32px,
-  linear-gradient(90deg, rgba(var(--lueur), .022) 1px, transparent 1px) 0 0 / 32px 32px,
-  radial-gradient(ellipse at top, var(--haut), var(--page) 60%) fixed; background-color: var(--page); }
-/* terminal : tout en chasse fixe */
-:root[data-theme="futur-vert"] body { font-family: var(--mono); }
-:root[data-theme="futur-vert"] h1 { text-shadow: 0 0 8px rgba(57, 255, 120, .8); }
-
-/* licorne : pastels, arc-en-ciel discret */
-:root[data-theme="licorne"] body { background: linear-gradient(135deg, #fdeef9 0%, #efe9ff 35%, #e6f7f6 70%, #fff6e6 100%) fixed; }
-:root[data-theme="licorne"] h1 { background: linear-gradient(90deg, #c13fb3, #7b5cf0, #2a9fd6); -webkit-background-clip: text; background-clip: text; color: transparent; }
-:root[data-theme="licorne"] h1 .sous { -webkit-text-fill-color: var(--doux); }
-:root[data-theme="licorne"] .carte-info, :root[data-theme="licorne"] .panneau { border-radius: 18px; }
-:root[data-theme="licorne"] .gros { background: linear-gradient(90deg, #a8379b, #6a4fd0); border-color: transparent; color: #fff; }
-:root[data-theme="licorne"] nav { border-top: 3px solid transparent; border-image: linear-gradient(90deg, #ff9ad5, #c49bff, #8fd3ff, #8ff0c8, #ffe08a) 1; }
-
-/* synthwave : coucher de soleil années 80, grille en perspective */
-:root[data-theme="synthwave"] body { background: linear-gradient(180deg, #14062a 0%, #2a0b4d 55%, #5a1460 85%, #ff6a88 140%) fixed; }
-:root[data-theme="synthwave"] body::before { content: ""; position: fixed; left: -50%; right: -50%; bottom: 0; height: 42vh; z-index: -1; pointer-events: none;
-  background: linear-gradient(rgba(255, 92, 205, .35) 1px, transparent 1px) 0 0 / 100% 34px, linear-gradient(90deg, rgba(54, 249, 246, .28) 1px, transparent 1px) 0 0 / 60px 100%;
-  transform: perspective(320px) rotateX(62deg); transform-origin: bottom; mask-image: linear-gradient(transparent, #000 70%); -webkit-mask-image: linear-gradient(transparent, #000 70%); }
-:root[data-theme="synthwave"] h1 { font-style: italic; background: linear-gradient(180deg, #fede5d, #ff5ccd); -webkit-background-clip: text; background-clip: text; color: transparent; filter: drop-shadow(0 0 8px rgba(255, 92, 205, .6)); }
-:root[data-theme="synthwave"] h1 .sous { -webkit-text-fill-color: var(--texte-2); }
-:root[data-theme="synthwave"] .carte-info, :root[data-theme="synthwave"] .panneau { background: rgba(28, 11, 54, .88); }
-:root[data-theme="synthwave"] .gros { background: linear-gradient(90deg, #c2389b, #5b2bd6); border-color: transparent; color: #fff; }
-
-/* holographique : verre dépoli sur fond irisé (texte secondaire un peu plus foncé que le dashboard : contraste 3,0 -> 3,9) */
-:root[data-theme="holo"] { --doux: #687789; }
-:root[data-theme="holo"] body { background: radial-gradient(circle at 12% 18%, #c8f1ff 0, transparent 38%), radial-gradient(circle at 88% 12%, #f3d4ff 0, transparent 40%),
-  radial-gradient(circle at 70% 85%, #d4ffe9 0, transparent 40%), radial-gradient(circle at 20% 90%, #ffe6d4 0, transparent 35%), #eef3f8 fixed; }
-:root[data-theme="holo"] .carte-info, :root[data-theme="holo"] .panneau { background: rgba(255, 255, 255, .6); backdrop-filter: blur(16px) saturate(1.3); -webkit-backdrop-filter: blur(16px) saturate(1.3);
-  border: 1px solid rgba(255, 255, 255, .75); border-radius: 18px; box-shadow: 0 8px 28px rgba(60, 90, 150, .12); }
-:root[data-theme="holo"] h1 { background: linear-gradient(90deg, #2448b8, #8b5cf6, #0ea5b7); -webkit-background-clip: text; background-clip: text; color: transparent; }
-:root[data-theme="holo"] h1 .sous { -webkit-text-fill-color: var(--doux); }
-
-/* cyberpunk : noir, jaune signalétique, angles coupés */
-:root[data-theme="cyberpunk"] body { background: repeating-linear-gradient(-45deg, #0a0a0a 0 22px, #0d0d0d 22px 44px) fixed; }
-:root[data-theme="cyberpunk"] h1 { display: inline-flex; background: #fcee0a; color: #000; padding: 2px 10px; }
-:root[data-theme="cyberpunk"] h1 .sous { color: #333; }
-:root[data-theme="cyberpunk"] .carte-info, :root[data-theme="cyberpunk"] .panneau { border-radius: 0; border-left: 3px solid #fcee0a;
-  clip-path: polygon(0 0, calc(100% - 16px) 0, 100% 16px, 100% 100%, 16px 100%, 0 calc(100% - 16px)); }
-:root[data-theme="cyberpunk"] .gros { color: #000; }
-:root[data-theme="cyberpunk"] nav { border-top: 2px solid #fcee0a; }
-
-/* LCD rétro : boîtier métal, écran gris-vert, liseré bordeaux */
-:root[data-theme="lcd"] body { background: linear-gradient(180deg, #ddd7c9, #c4bdac 60%, #b9b19f) fixed; }
-:root[data-theme="lcd"] .carte-info, :root[data-theme="lcd"] .panneau { border: 6px solid #d9d2c2; outline: 1px solid #9f9785; border-radius: 8px;
-  background: radial-gradient(ellipse at 30% 20%, #c3cdb3, #b4bfa4 70%); box-shadow: inset 0 2px 6px rgba(0, 0, 0, .25); }
-:root[data-theme="lcd"] h1 { color: #8c1c13; }
-:root[data-theme="lcd"] .gros { background: #8c1c13; border-color: #5e120c; border-radius: 99px; color: #f3ead8; box-shadow: inset 0 -3px 0 rgba(0, 0, 0, .3); }
-:root[data-theme="lcd"] nav { border-top: 4px solid #8c1c13; }
-
-/* cartoon : contours noirs épais, ombres décalées, trame de points */
-:root[data-theme="cartoon"] body { background: radial-gradient(rgba(242, 153, 74, .22) 1.6px, transparent 1.8px) 0 0 / 16px 16px, #fff6dc; }
-:root[data-theme="cartoon"] h1, :root[data-theme="cartoon"] h2, :root[data-theme="cartoon"] .ch-titre { font-family: "Comic Sans MS", "Comic Neue", "Chalkboard SE", "Segoe Print", cursive; }
-:root[data-theme="cartoon"] h1 { text-shadow: 3px 3px 0 #ffd23f; }
-:root[data-theme="cartoon"] .carte-info, :root[data-theme="cartoon"] .panneau { border: 3px solid #1a1a1a; box-shadow: 5px 5px 0 #1a1a1a; background: #fff; }
-:root[data-theme="cartoon"] .gros, :root[data-theme="cartoon"] .second, :root[data-theme="cartoon"] .opt, :root[data-theme="cartoon"] .seg { border: 2px solid #1a1a1a; box-shadow: 2px 2px 0 #1a1a1a; }
-:root[data-theme="cartoon"] .gros { color: #fff; }
-:root[data-theme="cartoon"] nav { background: #ffd23f; border-top: 4px solid #1a1a1a; }
-
+:root[data-theme="light"]{color-scheme:light;--page:#f6f6f3;--surface:#fcfcfb;--surface-2:#f1f0ec;--texte:#0b0b0b;--texte-2:#52514e;--doux:#898781;--grille:#e1e0d9;--axe:#c3c2b7;--bord:rgba(11,11,11,.10);--bord-fort:rgba(11,11,11,.18);--accent:#2a78d6;--accent-ink:#1c5cab;--accent-piste:#cde2fb;--vert:#0ca30c;--vert-ink:#006300;--orange:#fab219;--rouge:#d03b3b;--rouge-ink:#b02a2a;--lueur:42,120,214;--haut:#f6f6f3;--or:#fab219}
+:root[data-theme="dark"]{color-scheme:dark;--page:#0d0d0d;--surface:#1a1a19;--surface-2:#242422;--texte:#f0efec;--texte-2:#c3c2b7;--doux:#898781;--grille:#2c2c2a;--axe:#383835;--bord:rgba(255,255,255,.10);--bord-fort:rgba(255,255,255,.2);--accent:#3987e5;--accent-ink:#86b6ef;--accent-piste:#16304f;--vert:#0ca30c;--vert-ink:#3cc43c;--orange:#fab219;--rouge:#d03b3b;--rouge-ink:#ee6a6a;--lueur:57,135,229;--haut:#0d0d0d;--or:#fab219}
+:root[data-theme="aube"]{color-scheme:light;--page:#fbf3ea;--surface:#fffaf3;--surface-2:#f3e6d6;--texte:#3a2e28;--texte-2:#6b5a4f;--doux:#8d857f;--grille:#ebe6df;--axe:#d4cdc6;--bord:rgba(58,46,40,.10);--bord-fort:rgba(58,46,40,.18);--accent:#d9723a;--accent-ink:#a8481a;--accent-piste:#f7dcca;--vert:#4f9a52;--vert-ink:#2f6b33;--orange:#e0a526;--rouge:#cc4a3a;--rouge-ink:#a8321f;--lueur:217,114,58;--haut:#fbf3ea;--or:#e0a526}
+:root[data-theme="brume"]{color-scheme:light;--page:#eef2f5;--surface:#f8fafb;--surface-2:#e3e9ee;--texte:#1f2a33;--texte-2:#51606c;--doux:#7c8288;--grille:#e2e5e7;--axe:#c8cccf;--bord:rgba(31,42,51,.10);--bord-fort:rgba(31,42,51,.18);--accent:#4b86b4;--accent-ink:#25587f;--accent-piste:#d2e0eb;--vert:#3f9a6a;--vert-ink:#1f6b45;--orange:#d9a21f;--rouge:#cf4f4f;--rouge-ink:#a62f2f;--lueur:75,134,180;--haut:#eef2f5;--or:#d9a21f}
+:root[data-theme="papier"]{color-scheme:light;--page:#efe6d3;--surface:#f9f3e6;--surface-2:#efe5cf;--texte:#2b2620;--texte-2:#5b5244;--doux:#867b69;--grille:#e2d6bd;--axe:#c8b998;--bord:rgba(60,45,20,.13);--bord-fort:rgba(60,45,20,.24);--accent:#2f6db5;--accent-ink:#22528a;--accent-piste:#d9e2ec;--vert:#2e8b2e;--vert-ink:#1c641c;--orange:#d99a1e;--rouge:#c0392b;--rouge-ink:#9c2a1f;--lueur:47,109,181;--haut:#efe6d3;--or:#d99a1e}
+:root[data-theme="cafe"]{color-scheme:dark;--page:#1d1612;--surface:#271e18;--surface-2:#32261f;--texte:#eadbc8;--texte-2:#b9a58f;--doux:#887c70;--grille:#3a312a;--axe:#52483f;--bord:rgba(234,219,200,.10);--bord-fort:rgba(234,219,200,.20);--accent:#c98a52;--accent-ink:#e0a870;--accent-piste:#4b3625;--vert:#7fa65a;--vert-ink:#a3c97b;--orange:#d9a53a;--rouge:#cf6a55;--rouge-ink:#ee9a86;--lueur:201,138,82;--haut:#1d1612;--or:#d9a53a}
+:root[data-theme="minuit-doux"]{color-scheme:dark;--page:#14181f;--surface:#1b212a;--surface-2:#242c37;--texte:#dbe2ea;--texte-2:#a0acba;--doux:#7b828a;--grille:#2e343d;--axe:#454b54;--bord:rgba(219,226,234,.10);--bord-fort:rgba(219,226,234,.20);--accent:#6f9bd1;--accent-ink:#9bbce3;--accent-piste:#2d3c4f;--vert:#3fa56a;--vert-ink:#86d19f;--orange:#d9a53a;--rouge:#d05a5a;--rouge-ink:#f09a9a;--lueur:111,155,209;--haut:#14181f;--or:#d9a53a}
+:root[data-theme="penombre"]{color-scheme:dark;--page:#1b1d21;--surface:#23262b;--surface-2:#2b2f35;--texte:#dcd9d2;--texte-2:#aaa69e;--doux:#7f7c76;--grille:#33373e;--axe:#444950;--bord:rgba(255,255,255,.08);--bord-fort:rgba(255,255,255,.16);--accent:#6d9fd6;--accent-ink:#9cc0e8;--accent-piste:#22364d;--vert:#4f9d5a;--vert-ink:#86c890;--orange:#c9a14a;--rouge:#c46060;--rouge-ink:#e59494;--lueur:109,159,214;--haut:#1b1d21;--or:#c9a14a}
+:root[data-theme="encre"]{color-scheme:light;--page:#ffffff;--surface:#ffffff;--surface-2:#eeeeee;--texte:#000000;--texte-2:#2b2b2b;--doux:#808080;--grille:#e6e6e6;--axe:#c7c7c7;--bord:rgba(0,0,0,.10);--bord-fort:rgba(0,0,0,.18);--accent:#0033cc;--accent-ink:#0033cc;--accent-piste:#c7d2f4;--vert:#008000;--vert-ink:#004800;--orange:#e6a800;--rouge:#c00020;--rouge-ink:#780014;--lueur:0,51,204;--haut:#ffffff;--or:#e6a800}
+:root[data-theme="encre"] :focus-visible{outline:3px solid var(--texte);outline-offset:3px}
+:root[data-theme="encre"] .carte-info,:root[data-theme="encre"] .panneau,:root[data-theme="encre"] .carte-info{border:2px solid var(--texte);border-radius:6px;box-shadow:none}
+:root[data-theme="encre"] .gros,:root[data-theme="encre"] .second{border:2px solid var(--texte)}
+:root[data-theme="encre"] nav{border-color:var(--texte)}
+:root[data-theme="encre"] .barre{border:1px solid var(--texte)}
+:root[data-theme="contraste-nuit"]{color-scheme:dark;--page:#000000;--surface:#0a0a0a;--surface-2:#1a1a1a;--texte:#ffffff;--texte-2:#e0e0e0;--doux:#848484;--grille:#222222;--axe:#404040;--bord:rgba(255,255,255,.10);--bord-fort:rgba(255,255,255,.20);--accent:#ffd400;--accent-ink:#ffd400;--accent-piste:#403608;--vert:#00c853;--vert-ink:#69ff8f;--orange:#ffb000;--rouge:#ff4d4d;--rouge-ink:#ff8a8a;--lueur:255,212,0;--haut:#000000;--or:#ffb000}
+:root[data-theme="contraste-nuit"] :focus-visible{outline:3px solid var(--accent);outline-offset:3px}
+:root[data-theme="contraste-nuit"] .carte-info,:root[data-theme="contraste-nuit"] .panneau,:root[data-theme="contraste-nuit"] .carte-info{border:2px solid var(--texte);border-radius:6px;box-shadow:none}
+:root[data-theme="contraste-nuit"] .gros,:root[data-theme="contraste-nuit"] .second{border:2px solid var(--texte)}
+:root[data-theme="contraste-nuit"] nav{border-color:var(--texte)}
+:root[data-theme="contraste-nuit"] .barre{border:1px solid var(--texte)}
+:root[data-theme="desert"]{color-scheme:light;--page:#f5e9d7;--surface:#fbf3e6;--surface-2:#ecdcc0;--texte:#3b2a1a;--texte-2:#6d5a44;--doux:#8d7f71;--grille:#e8dfd2;--axe:#d1c7b9;--bord:rgba(59,42,26,.10);--bord-fort:rgba(59,42,26,.18);--accent:#c4622d;--accent-ink:#98431a;--accent-piste:#efd3bd;--vert:#6b8f3a;--vert-ink:#44601c;--orange:#d99a1e;--rouge:#c0392b;--rouge-ink:#9a2a1d;--lueur:196,98,45;--haut:#f5e9d7;--or:#d99a1e}
+:root[data-theme="desert"] body{background:linear-gradient(180deg,#f9dcae 0,var(--page) 300px) fixed,var(--page)}
+:root[data-theme="desert"] h1,:root[data-theme="desert"] h2{font-family:"Trebuchet MS","Segoe UI",sans-serif;letter-spacing:.02em}
+:root[data-theme="desert"] .carte-info,:root[data-theme="desert"] .panneau,:root[data-theme="desert"] .carte-info{border-radius:3px;border-color:rgba(196,98,45,.3);border-top:3px solid var(--accent)}
+:root[data-theme="desert"] nav{background:var(--surface);border-right:3px solid rgba(196,98,45,.45)}
+:root[data-theme="lagon"]{color-scheme:light;--page:#e6f7f6;--surface:#f6fffe;--surface-2:#d3eeec;--texte:#0d3338;--texte-2:#3f6a6e;--doux:#708a8c;--grille:#dfebea;--axe:#c3d2d2;--bord:rgba(13,51,56,.10);--bord-fort:rgba(13,51,56,.18);--accent:#0e9794;--accent-ink:#0b6d6b;--accent-piste:#c3e8e7;--vert:#2fa36b;--vert-ink:#1a6f48;--orange:#e0a526;--rouge:#d4574a;--rouge-ink:#a8321f;--lueur:14,151,148;--haut:#e6f7f6;--or:#e0a526}
+:root[data-theme="lagon"] body{background:linear-gradient(180deg,#c9f1ee 0,var(--page) 380px) fixed,var(--page)}
+:root[data-theme="lagon"] nav{background:linear-gradient(180deg,#c4efeb,var(--surface) 70%)}
+:root[data-theme="lagon"] .carte-info,:root[data-theme="lagon"] .panneau,:root[data-theme="lagon"] .carte-info{border-radius:22px 22px 22px 6px;border-color:rgba(14,151,148,.28)}
+:root[data-theme="lagon"] h1{color:var(--accent-ink)}
+:root[data-theme="sakura"]{color-scheme:light;--page:#fdf0f3;--surface:#fffafb;--surface-2:#f8dfe6;--texte:#3d2630;--texte-2:#78545f;--doux:#8f8087;--grille:#ece5e7;--axe:#d4cbce;--bord:rgba(61,38,48,.10);--bord-fort:rgba(61,38,48,.18);--accent:#d6567f;--accent-ink:#a8335a;--accent-piste:#f6d6e0;--vert:#4f9a62;--vert-ink:#2c6b3d;--orange:#e0a526;--rouge:#cc3a4a;--rouge-ink:#a81f33;--lueur:214,86,127;--haut:#fdf0f3;--or:#e0a526}
+:root[data-theme="sakura"] body{background:radial-gradient(circle at 8% 12%,rgba(255,170,195,.55) 0 7px,transparent 8px),radial-gradient(circle at 92% 22%,rgba(255,170,195,.45) 0 5px,transparent 6px),radial-gradient(circle at 78% 82%,rgba(255,170,195,.5) 0 9px,transparent 10px),radial-gradient(circle at 20% 90%,rgba(255,170,195,.4) 0 6px,transparent 7px),radial-gradient(circle at 55% 6%,rgba(255,170,195,.35) 0 4px,transparent 5px),var(--page);background-attachment:fixed}
+:root[data-theme="sakura"] .carte-info,:root[data-theme="sakura"] .panneau,:root[data-theme="sakura"] .carte-info{border-radius:20px;border-color:rgba(214,86,127,.22)}
+:root[data-theme="sakura"] h1{color:var(--accent-ink)}
+:root[data-theme="sakura"] .gros,:root[data-theme="sakura"] .second{border-radius:99px}
+:root[data-theme="aurore"]{color-scheme:dark;--page:#08101c;--surface:#0f1a2b;--surface-2:#172539;--texte:#e6f2f5;--texte-2:#a3b9c4;--doux:#7a8690;--grille:#24303f;--axe:#3e4a57;--bord:rgba(230,242,245,.10);--bord-fort:rgba(230,242,245,.20);--accent:#3ee0b0;--accent-ink:#5eeac0;--accent-piste:#194648;--vert:#3ee08a;--vert-ink:#6ff0a8;--orange:#f0c040;--rouge:#ff6f7a;--rouge-ink:#ff9aa2;--lueur:62,224,176;--haut:#08101c;--or:#f0c040}
+:root[data-theme="aurore"] body{background:radial-gradient(ellipse 70% 50% at 20% -5%,rgba(62,224,176,.32),transparent 70%),radial-gradient(ellipse 60% 45% at 85% -10%,rgba(165,139,255,.32),transparent 70%),var(--page);background-attachment:fixed}
+@media (prefers-reduced-motion:no-preference){:root[data-theme="aurore"] body{background-size:140% 140%,140% 140%,auto;animation:aurore-voile 30s ease-in-out infinite alternate}}
+:root[data-theme="aurore"] .carte-info,:root[data-theme="aurore"] .panneau,:root[data-theme="aurore"] .carte-info{background:color-mix(in srgb,var(--surface) 86%,transparent);backdrop-filter:blur(8px);border-color:rgba(94,234,192,.18)}
+:root[data-theme="aurore"] h1{background:linear-gradient(90deg,#5eeac0,#b3a8ff);-webkit-background-clip:text;background-clip:text;color:transparent}
+@keyframes aurore-voile{from{background-position:0 0,100% 0,0 0}to{background-position:35% 0,65% 0,0 0}}
+:root[data-theme="foret"]{color-scheme:dark;--page:#0f1a14;--surface:#15231b;--surface-2:#1d3026;--texte:#dfeadf;--texte-2:#a4baa8;--doux:#7a867d;--grille:#29372f;--axe:#414f46;--bord:rgba(223,234,223,.10);--bord-fort:rgba(223,234,223,.20);--accent:#5fae6e;--accent-ink:#7fcb8d;--accent-piste:#25422d;--vert:#4fae6a;--vert-ink:#7fd096;--orange:#d6b04a;--rouge:#d9776a;--rouge-ink:#f0a094;--lueur:95,174,110;--haut:#0f1a14;--or:#d6b04a}
+:root[data-theme="foret"] body{background:radial-gradient(ellipse at 0 0,rgba(95,174,110,.15),transparent 50%),radial-gradient(ellipse at 100% 100%,rgba(60,120,80,.14),transparent 55%),var(--page);background-attachment:fixed}
+:root[data-theme="foret"] .carte-info,:root[data-theme="foret"] .panneau,:root[data-theme="foret"] .carte-info{border-radius:16px;border-color:rgba(127,203,141,.22)}
+:root[data-theme="foret"] .gros,:root[data-theme="foret"] .second{border-radius:99px}
+:root[data-theme="annees-70"]{color-scheme:light;--page:#f3e3c3;--surface:#fbf0d9;--surface-2:#ecd3a0;--texte:#4a2c14;--texte-2:#6b4524;--doux:#907a62;--grille:#e9dcc5;--axe:#d4c5ae;--bord:rgba(74,44,20,.10);--bord-fort:rgba(74,44,20,.18);--accent:#c5701a;--accent-ink:#9a4e0a;--accent-piste:#efd4af;--vert:#7b8f2a;--vert-ink:#4c5a14;--orange:#e2a900;--rouge:#b8421f;--rouge-ink:#8f2f12;--lueur:197,112,26;--haut:#f3e3c3;--or:#e2a900}
+:root[data-theme="annees-70"] body{font-family:"Trebuchet MS","Segoe UI",sans-serif}
+:root[data-theme="annees-70"] h1,:root[data-theme="annees-70"] h2{font-weight:800;letter-spacing:-.01em}
+:root[data-theme="annees-70"] .carte-info,:root[data-theme="annees-70"] .panneau,:root[data-theme="annees-70"] .carte-info{border-radius:24px;border:2px solid var(--texte);box-shadow:4px 4px 0 #d9822b}
+:root[data-theme="annees-70"] nav{border-right:12px solid transparent;border-image:linear-gradient(90deg,#d9822b 0 33%,#e2a900 33% 66%,#7b8f2a 66%) 1}
+:root[data-theme="annees-70"] .gros,:root[data-theme="annees-70"] .second{border-radius:99px}
+:root[data-theme="annees-70"] .barre,:root[data-theme="annees-70"] .barre>div{height:10px}
+:root[data-theme="lcd"]{color-scheme:light;--page:#cfc8b8;--surface:#b9c4a9;--surface-2:#acb89b;--texte:#1d2418;--texte-2:#36402f;--doux:#566250;--grille:#a3af94;--axe:#8a9679;--bord:rgba(29,36,24,.22);--bord-fort:rgba(29,36,24,.45);--accent:#1d2418;--accent-ink:#1d2418;--accent-piste:#a6b296;--vert:#2f5d2a;--vert-ink:#1f4a1c;--orange:#8a5a10;--rouge:#8c1c13;--rouge-ink:#7a1610;--lueur:29,36,24;--haut:#cfc8b8;--or:#8a5a10}
+:root[data-theme="lcd"] body{background:linear-gradient(180deg,#ddd7c9,#c4bdac 60%,#b9b19f) fixed}
+:root[data-theme="lcd"] nav{background:#d8d1c1;border-top:4px solid #8c1c13;box-shadow:0 2px 0 #b2aa97}
+:root[data-theme="lcd"] .carte-info,:root[data-theme="lcd"] .panneau,:root[data-theme="lcd"] .carte-info{border:6px solid #d9d2c2;outline:1px solid #9f9785;border-radius:8px; background:radial-gradient(ellipse at 30% 20%,#c3cdb3,#b4bfa4 70%)}
+:root[data-theme="lcd"] h1,:root[data-theme="lcd"] h2{text-transform:uppercase;letter-spacing:.14em}
+:root[data-theme="lcd"] h1{color:#8c1c13}
+:root[data-theme="lcd"] .carte-info .val{font-family:var(--mono);letter-spacing:.04em}
+:root[data-theme="lcd"] .carte-info .val{text-shadow:2px 2px 0 rgba(29,36,24,.12)}
+:root[data-theme="lcd"] .barre{background:repeating-linear-gradient(90deg,rgba(29,36,24,.08) 0 6px,transparent 6px 8px)}
+:root[data-theme="lcd"] .barre i:not(.neg){background:repeating-linear-gradient(90deg,#1d2418 0 6px,transparent 6px 8px)}
+:root[data-theme="lcd"] .barre,:root[data-theme="lcd"] .barre>div{border-radius:0}
+:root[data-theme="lcd"] .gros{background:#8c1c13;border-color:#5e120c;border-radius:99px;box-shadow:inset 0 -3px 0 rgba(0,0,0,.3)}
+:root[data-theme="sepia"]{color-scheme:light;--page:#efe3c8;--surface:#f6ecd5;--surface-2:#e6d6b3;--texte:#3b2d1c;--texte-2:#6a5538;--doux:#857966;--grille:#e3d9c3;--axe:#cdc2ac;--bord:rgba(59,45,28,.10);--bord-fort:rgba(59,45,28,.18);--accent:#8b4a2b;--accent-ink:#7a3d20;--accent-piste:#dec8b0;--vert:#5c7a2e;--vert-ink:#3d5619;--orange:#c98a10;--rouge:#a83225;--rouge-ink:#8c2518;--lueur:139,74,43;--haut:#efe3c8;--or:#c98a10}
+:root[data-theme="sepia"] body{font-family:"Palatino Linotype",Palatino,Georgia,serif;font-size:15px;background:repeating-linear-gradient(0deg,rgba(90,60,20,.03) 0 2px,transparent 2px 4px),var(--page)}
+:root[data-theme="sepia"] h1,:root[data-theme="sepia"] h2{font-family:Georgia,"Times New Roman",serif;font-variant:small-caps;letter-spacing:.04em}
+:root[data-theme="sepia"] h2{text-transform:none}
+:root[data-theme="sepia"] .carte-info,:root[data-theme="sepia"] .panneau,:root[data-theme="sepia"] .carte-info{border:3px double #b99a62;border-radius:3px;box-shadow:2px 3px 0 rgba(90,60,20,.15)}
+:root[data-theme="sepia"] nav{border-right:3px double #b99a62}
+:root[data-theme="arcade"]{color-scheme:dark;--page:#0b0b1a;--surface:#14142b;--surface-2:#1d1d3d;--texte:#f4f4ff;--texte-2:#b7b7e0;--doux:#848495;--grille:#2a2a40;--axe:#45455a;--bord:rgba(244,244,255,.10);--bord-fort:rgba(244,244,255,.20);--accent:#ffd400;--accent-ink:#ffd400;--accent-piste:#483e22;--vert:#39e05a;--vert-ink:#6dff8a;--orange:#ff9f1c;--rouge:#ff4040;--rouge-ink:#ff7a7a;--lueur:255,212,0;--haut:#0b0b1a;--or:#ff9f1c}
+:root[data-theme="arcade"] body{font-family:"Courier New",Consolas,monospace;background:linear-gradient(rgba(255,255,255,.035) 1px,transparent 1px) 0 0/100% 4px,var(--page)}
+:root[data-theme="arcade"] h1,:root[data-theme="arcade"] h2,:root[data-theme="arcade"] .carte-info .lib{text-transform:uppercase;letter-spacing:.1em}
+:root[data-theme="arcade"] h1{color:var(--accent-ink);text-shadow:3px 3px 0 #ff3b3b}
+:root[data-theme="arcade"] .carte-info,:root[data-theme="arcade"] .panneau,:root[data-theme="arcade"] .carte-info{border:3px solid var(--texte);border-radius:0;box-shadow:5px 5px 0 #ff3b3b}
+:root[data-theme="arcade"] .gros,:root[data-theme="arcade"] .second{border-radius:0;border:2px solid var(--texte);text-transform:uppercase}
+:root[data-theme="arcade"] .barre,:root[data-theme="arcade"] .barre>div{border-radius:0}
+:root[data-theme="arcade"] .barre i:not(.neg){background:repeating-linear-gradient(90deg,var(--accent) 0 8px,transparent 8px 10px)}
+:root[data-theme="synthwave"]{color-scheme:dark;--page:#14062a;--surface:#1c0b36;--surface-2:#271046;--texte:#fbe9ff;--texte-2:#cba6e3;--doux:#8d6ba8;--grille:#2f1752;--axe:#46217a;--bord:rgba(255,92,205,.2);--bord-fort:rgba(255,92,205,.42);--accent:#ff5ccd;--accent-ink:#ff9be3;--accent-piste:#45123d;--vert:#36f9f6;--vert-ink:#7ffcfa;--orange:#fede5d;--rouge:#ff7a45;--rouge-ink:#ffa37f;--lueur:255,92,205;--haut:#14062a;--or:#fede5d}
+:root[data-theme="synthwave"] body{background:linear-gradient(180deg,#14062a 0%,#2a0b4d 55%,#5a1460 85%,#ff6a88 140%) fixed}
+:root[data-theme="synthwave"] body::before{content:"";position:fixed;left:-50%;right:-50%;bottom:0;height:42vh;z-index:-1;pointer-events:none; background:linear-gradient(rgba(255,92,205,.35) 1px,transparent 1px) 0 0/100% 34px,linear-gradient(90deg,rgba(54,249,246,.28) 1px,transparent 1px) 0 0/60px 100%; transform:perspective(320px) rotateX(62deg);transform-origin:bottom;mask-image:linear-gradient(transparent,#000 70%);-webkit-mask-image:linear-gradient(transparent,#000 70%)}
+:root[data-theme="synthwave"] nav{background:rgba(20,6,42,.85);border-top:2px solid transparent;border-image:linear-gradient(90deg,#ff5ccd,#fede5d,#36f9f6) 1}
+:root[data-theme="synthwave"] h1{font-style:italic;letter-spacing:.06em;text-transform:uppercase;background:linear-gradient(180deg,#fede5d,#ff5ccd);-webkit-background-clip:text;background-clip:text;color:transparent;filter:drop-shadow(0 0 8px rgba(255,92,205,.6))}
+:root[data-theme="synthwave"] h2{letter-spacing:.08em;text-transform:uppercase}
+:root[data-theme="synthwave"] .carte-info,:root[data-theme="synthwave"] .panneau,:root[data-theme="synthwave"] .carte-info{background:rgba(28,11,54,.88)}
+:root[data-theme="synthwave"] .carte-info .val{color:#36f9f6;text-shadow:0 0 10px rgba(54,249,246,.5)}
+:root[data-theme="synthwave"] .gros{background:linear-gradient(90deg,#c2389b,#5b2bd6);border-color:transparent}
+:root[data-theme="glace"]{color-scheme:light;--page:#eaf6fb;--surface:#fbfeff;--surface-2:#e0f0f8;--texte:#0b2a3a;--texte-2:#3d5f73;--doux:#778992;--grille:#e3e9eb;--axe:#c6cfd4;--bord:rgba(11,42,58,.10);--bord-fort:rgba(11,42,58,.18);--accent:#0094c8;--accent-ink:#00668c;--accent-piste:#c4e7f3;--vert:#1f9d6b;--vert-ink:#12684a;--orange:#d9a21f;--rouge:#cf4a5a;--rouge-ink:#a62f40;--lueur:0,148,200;--haut:#eaf6fb;--or:#d9a21f}
+:root[data-theme="glace"] body{background:linear-gradient(135deg,#dff3fb 0%,#f4fbff 45%,#d6ecf7 100%) fixed,var(--page)}
+:root[data-theme="glace"] .carte-info,:root[data-theme="glace"] .panneau,:root[data-theme="glace"] .carte-info{background:rgba(255,255,255,.66);backdrop-filter:blur(14px) saturate(1.3);border:1px solid rgba(255,255,255,.9);border-top:2px solid var(--accent);border-radius:6px;box-shadow:0 8px 30px rgba(0,102,140,.10)}
+:root[data-theme="glace"] nav{background:rgba(255,255,255,.6);backdrop-filter:blur(14px)}
+:root[data-theme="glace"] h1{font-weight:300;font-size:22px;letter-spacing:.02em}
+:root[data-theme="glace"] .barre i:not(.neg){background:linear-gradient(90deg,#7fdcff,var(--accent))}
+:root[data-theme="holo"]{color-scheme:light;--page:#eef3f8;--surface:#ffffff;--surface-2:#e8eef6;--texte:#0f1b2d;--texte-2:#46566c;--doux:#79889d;--grille:#dde5ef;--axe:#c3cfdd;--bord:rgba(80,110,160,.18);--bord-fort:rgba(80,110,160,.3);--accent:#3a6df0;--accent-ink:#2448b8;--accent-piste:#d6e0fb;--vert:#10a37f;--vert-ink:#086650;--orange:#e3a008;--rouge:#e5484d;--rouge-ink:#b4232a;--lueur:58,109,240;--haut:#eef3f8;--or:#e3a008}
+:root[data-theme="holo"]{--surface:rgba(255,255,255,.72)}
+:root[data-theme="holo"] body{background:radial-gradient(circle at 12% 18%,#c8f1ff 0,transparent 38%),radial-gradient(circle at 88% 12%,#f3d4ff 0,transparent 40%), radial-gradient(circle at 70% 85%,#d4ffe9 0,transparent 40%),radial-gradient(circle at 20% 90%,#ffe6d4 0,transparent 35%),#eef3f8 fixed}
+:root[data-theme="holo"] .carte-info,:root[data-theme="holo"] .panneau,:root[data-theme="holo"] .carte-info{backdrop-filter:blur(16px) saturate(1.3);-webkit-backdrop-filter:blur(16px) saturate(1.3);border:1px solid rgba(255,255,255,.75);border-radius:18px}
+:root[data-theme="holo"] nav{background:rgba(255,255,255,.55)}
+:root[data-theme="holo"] h1{background:linear-gradient(90deg,#2448b8,#8b5cf6,#0ea5b7);-webkit-background-clip:text;background-clip:text;color:transparent}
+:root[data-theme="holo"] .barre i:not(.neg){background:linear-gradient(90deg,#5aa8ff,#8b5cf6)}
+:root[data-theme="cyberpunk"]{color-scheme:dark;--page:#0a0a0a;--surface:#121212;--surface-2:#1c1c1c;--texte:#f2f2e9;--texte-2:#b9b8a8;--doux:#77766a;--grille:#262626;--axe:#3a3a3a;--bord:rgba(252,238,10,.18);--bord-fort:rgba(252,238,10,.42);--accent:#fcee0a;--accent-ink:#fff35c;--accent-piste:#3a3700;--vert:#00f0ff;--vert-ink:#5cf7ff;--orange:#ff9f1c;--rouge:#ff003c;--rouge-ink:#ff5c7a;--lueur:252,238,10;--haut:#0a0a0a;--or:#ff9f1c}
+:root[data-theme="cyberpunk"] body{background:repeating-linear-gradient(-45deg,#0a0a0a 0 22px,#0d0d0d 22px 44px) fixed}
+:root[data-theme="cyberpunk"] nav{background:rgba(10,10,10,.92);border-top:2px solid #fcee0a}
+:root[data-theme="cyberpunk"] .carte-info,:root[data-theme="cyberpunk"] .panneau,:root[data-theme="cyberpunk"] .carte-info{border-radius:0;border-left:3px solid #fcee0a; clip-path:polygon(0 0,calc(100% - 16px) 0,100% 16px,100% 100%,16px 100%,0 calc(100% - 16px))}
+:root[data-theme="cyberpunk"] h1{display:inline-block;background:#fcee0a;color:#000;padding:0 10px;text-transform:uppercase;letter-spacing:.08em}
+:root[data-theme="cyberpunk"] h2{text-transform:uppercase;letter-spacing:.1em}
+:root[data-theme="cyberpunk"] .carte-info .val{font-family:var(--mono)}
+:root[data-theme="cyberpunk"] .gros{color:#000;border-radius:0}
+:root[data-theme="espace"]{color-scheme:dark;--page:#05060f;--surface:#0e1028;--surface-2:#1a1d4a;--texte:#e9ebff;--texte-2:#aab0e6;--doux:#7c7e94;--grille:#24263e;--axe:#3e4057;--bord:rgba(233,235,255,.10);--bord-fort:rgba(233,235,255,.20);--accent:#8b7bff;--accent-ink:#b3a8ff;--accent-piste:#2a2857;--vert:#3fd68a;--vert-ink:#6ff0ae;--orange:#ffc24a;--rouge:#ff6b85;--rouge-ink:#ff9aae;--lueur:139,123,255;--haut:#05060f;--or:#ffc24a}
+:root[data-theme="espace"] body{background:radial-gradient(1px 1px at 23px 41px,#fff,transparent 60%) 0 0/233px 233px,radial-gradient(1.5px 1.5px at 101px 17px,#dfe3ff,transparent 60%) 0 0/311px 311px,radial-gradient(1px 1px at 170px 120px,#fff,transparent 60%) 0 0/197px 197px,radial-gradient(1px 1px at 60px 150px,#bfc8ff,transparent 60%) 0 0/271px 271px,radial-gradient(ellipse 60% 50% at 85% 0,rgba(109,92,240,.30),transparent 70%),radial-gradient(ellipse 50% 45% at 0 100%,rgba(0,170,255,.16),transparent 70%),var(--page);background-attachment:fixed}
+:root[data-theme="espace"] .carte-info,:root[data-theme="espace"] .panneau,:root[data-theme="espace"] .carte-info{background:color-mix(in srgb,var(--surface) 84%,transparent);backdrop-filter:blur(6px);border-color:rgba(179,168,255,.22)}
+:root[data-theme="espace"] h1{letter-spacing:.08em;text-shadow:0 0 14px rgba(139,123,255,.6)}
+:root[data-theme="futuriste"]{color-scheme:dark;--page:#05070f;--surface:#0a1020;--surface-2:#101834;--texte:#d8f3ff;--texte-2:#8fb6cc;--doux:#5e7d92;--grille:#16213d;--axe:#22325c;--bord:rgba(0,229,255,.16);--bord-fort:rgba(0,229,255,.34);--accent:#00d8f0;--accent-ink:#5ff0ff;--accent-piste:#073246;--vert:#18e39a;--vert-ink:#3dffb0;--orange:#ffd23f;--rouge:#ff3d81;--rouge-ink:#ff78a8;--lueur:0,229,255;--haut:#0d1838;--or:#ffd23f;--rayon:4px}
+:root[data-theme="futuriste"] body{background: linear-gradient(rgba(var(--lueur),.035) 1px,transparent 1px) 0 0/32px 32px, linear-gradient(90deg,rgba(var(--lueur),.035) 1px,transparent 1px) 0 0/32px 32px, radial-gradient(ellipse at top,var(--haut),var(--page) 60%) fixed}
+:root[data-theme="futuriste"] nav{background:color-mix(in srgb,var(--page) 85%,transparent);border-top:1px solid rgba(var(--lueur),.35);box-shadow:0 0 18px rgba(var(--lueur),.15)}
+:root[data-theme="futuriste"] h1,:root[data-theme="futuriste"] h2{letter-spacing:.12em;text-transform:uppercase}
+:root[data-theme="futuriste"] h1{text-shadow:0 0 12px rgba(var(--lueur),.55)}
+:root[data-theme="futuriste"] .carte-info .val{font-family:var(--mono)}
+:root[data-theme="futuriste"] .carte-info .val{color:var(--accent-ink);text-shadow:0 0 10px rgba(var(--lueur),.45)}
+:root[data-theme="futuriste"] .carte-info,:root[data-theme="futuriste"] .panneau,:root[data-theme="futuriste"] .carte-info{border-radius:4px;background:linear-gradient(180deg,color-mix(in srgb,var(--surface-2) 92%,transparent),color-mix(in srgb,var(--surface) 92%,transparent))}
+:root[data-theme="futuriste"] .gros{color:var(--page);box-shadow:0 0 12px rgba(var(--lueur),.5)}
+:root[data-theme="futuriste"] .barre i{box-shadow:0 0 6px currentColor}
+:root[data-theme="futur-ambre"]{color-scheme:dark;--page:#0c0802;--surface:#160f05;--surface-2:#22180a;--texte:#ffe9c4;--texte-2:#d1ad74;--doux:#8f7448;--grille:#2a1e0d;--axe:#3d2c12;--bord:rgba(255,170,40,.18);--bord-fort:rgba(255,170,40,.36);--accent:#ffae1f;--accent-ink:#ffc865;--accent-piste:#3a2606;--vert:#7ee05a;--vert-ink:#a6f07e;--orange:#ffe14d;--rouge:#ff4d3d;--rouge-ink:#ff8a7a;--lueur:255,170,40;--haut:#241505;--or:#ffe14d;--rayon:4px}
+:root[data-theme="futur-ambre"] body{background: linear-gradient(rgba(var(--lueur),.035) 1px,transparent 1px) 0 0/32px 32px, linear-gradient(90deg,rgba(var(--lueur),.035) 1px,transparent 1px) 0 0/32px 32px, radial-gradient(ellipse at top,var(--haut),var(--page) 60%) fixed}
+:root[data-theme="futur-ambre"] nav{background:color-mix(in srgb,var(--page) 85%,transparent);border-top:1px solid rgba(var(--lueur),.35);box-shadow:0 0 18px rgba(var(--lueur),.15)}
+:root[data-theme="futur-ambre"] h1,:root[data-theme="futur-ambre"] h2{letter-spacing:.12em;text-transform:uppercase}
+:root[data-theme="futur-ambre"] h1{text-shadow:0 0 12px rgba(var(--lueur),.55)}
+:root[data-theme="futur-ambre"] .carte-info .val{font-family:var(--mono)}
+:root[data-theme="futur-ambre"] .carte-info .val{color:var(--accent-ink);text-shadow:0 0 10px rgba(var(--lueur),.45)}
+:root[data-theme="futur-ambre"] .carte-info,:root[data-theme="futur-ambre"] .panneau,:root[data-theme="futur-ambre"] .carte-info{border-radius:4px;background:linear-gradient(180deg,color-mix(in srgb,var(--surface-2) 92%,transparent),color-mix(in srgb,var(--surface) 92%,transparent))}
+:root[data-theme="futur-ambre"] .gros{color:var(--page);box-shadow:0 0 12px rgba(var(--lueur),.5)}
+:root[data-theme="futur-ambre"] .barre i{box-shadow:0 0 6px currentColor}
+:root[data-theme="futur-confort"]{color-scheme:dark;--page:#16181c;--surface:#1d2025;--surface-2:#252930;--texte:#e6dfcc;--texte-2:#b2ab96;--doux:#827d6f;--grille:#2c3038;--axe:#3b4048;--bord:rgba(217,178,95,.13);--bord-fort:rgba(217,178,95,.26);--accent:#d9b25f;--accent-ink:#e8c97f;--accent-piste:#3a3220;--vert:#7fb98a;--vert-ink:#a2d1aa;--orange:#e0a458;--rouge:#d47f6f;--rouge-ink:#e6a395;--lueur:217,178,95;--haut:#20242b;--or:#d9b25f;--rayon:4px}
+:root[data-theme="futur-confort"] body{background: linear-gradient(rgba(var(--lueur),.035) 1px,transparent 1px) 0 0/32px 32px, linear-gradient(90deg,rgba(var(--lueur),.035) 1px,transparent 1px) 0 0/32px 32px, radial-gradient(ellipse at top,var(--haut),var(--page) 60%) fixed}
+:root[data-theme="futur-confort"] nav{background:color-mix(in srgb,var(--page) 85%,transparent);border-top:1px solid rgba(var(--lueur),.35);box-shadow:0 0 18px rgba(var(--lueur),.15)}
+:root[data-theme="futur-confort"] h1,:root[data-theme="futur-confort"] h2{letter-spacing:.12em;text-transform:uppercase}
+:root[data-theme="futur-confort"] h1{text-shadow:0 0 12px rgba(var(--lueur),.55)}
+:root[data-theme="futur-confort"] .carte-info .val{font-family:var(--mono)}
+:root[data-theme="futur-confort"] .carte-info .val{color:var(--accent-ink);text-shadow:0 0 10px rgba(var(--lueur),.45)}
+:root[data-theme="futur-confort"] .carte-info,:root[data-theme="futur-confort"] .panneau,:root[data-theme="futur-confort"] .carte-info{border-radius:4px;background:linear-gradient(180deg,color-mix(in srgb,var(--surface-2) 92%,transparent),color-mix(in srgb,var(--surface) 92%,transparent))}
+:root[data-theme="futur-confort"] .gros{color:var(--page);box-shadow:0 0 12px rgba(var(--lueur),.5)}
+:root[data-theme="futur-confort"] .barre i{box-shadow:0 0 6px currentColor}
+:root[data-theme="futur-confort"] body{background: linear-gradient(rgba(var(--lueur),.022) 1px,transparent 1px) 0 0/32px 32px, linear-gradient(90deg,rgba(var(--lueur),.022) 1px,transparent 1px) 0 0/32px 32px, radial-gradient(ellipse at top,var(--haut),var(--page) 60%) fixed}
+:root[data-theme="futur-confort"] h1,:root[data-theme="futur-confort"] .carte-info .val{text-shadow:none}
+:root[data-theme="futur-confort"] h1,:root[data-theme="futur-confort"] h2{letter-spacing:.08em}
+:root[data-theme="futur-confort"] nav,:root[data-theme="futur-confort"] .barre i,:root[data-theme="futur-confort"] .gros{box-shadow:none}
+:root[data-theme="futur-confort-ardoise"]{color-scheme:dark;--page:#16181c;--surface:#1d2025;--surface-2:#252930;--texte:#e6dfcc;--texte-2:#b2ab96;--doux:#827d6f;--grille:#2c3038;--axe:#3b4048;--bord:rgba(126,163,196,.13);--bord-fort:rgba(126,163,196,.26);--accent:#7ea3c4;--accent-ink:#a8c4dc;--accent-piste:#253240;--vert:#7fb98a;--vert-ink:#a2d1aa;--orange:#e0a458;--rouge:#d47f6f;--rouge-ink:#e6a395;--lueur:126,163,196;--haut:#20242b;--or:#d9b25f;--rayon:4px}
+:root[data-theme="futur-confort-ardoise"] body{background: linear-gradient(rgba(var(--lueur),.035) 1px,transparent 1px) 0 0/32px 32px, linear-gradient(90deg,rgba(var(--lueur),.035) 1px,transparent 1px) 0 0/32px 32px, radial-gradient(ellipse at top,var(--haut),var(--page) 60%) fixed}
+:root[data-theme="futur-confort-ardoise"] nav{background:color-mix(in srgb,var(--page) 85%,transparent);border-top:1px solid rgba(var(--lueur),.35);box-shadow:0 0 18px rgba(var(--lueur),.15)}
+:root[data-theme="futur-confort-ardoise"] h1,:root[data-theme="futur-confort-ardoise"] h2{letter-spacing:.12em;text-transform:uppercase}
+:root[data-theme="futur-confort-ardoise"] h1{text-shadow:0 0 12px rgba(var(--lueur),.55)}
+:root[data-theme="futur-confort-ardoise"] .carte-info .val{font-family:var(--mono)}
+:root[data-theme="futur-confort-ardoise"] .carte-info .val{color:var(--accent-ink);text-shadow:0 0 10px rgba(var(--lueur),.45)}
+:root[data-theme="futur-confort-ardoise"] .carte-info,:root[data-theme="futur-confort-ardoise"] .panneau,:root[data-theme="futur-confort-ardoise"] .carte-info{border-radius:4px;background:linear-gradient(180deg,color-mix(in srgb,var(--surface-2) 92%,transparent),color-mix(in srgb,var(--surface) 92%,transparent))}
+:root[data-theme="futur-confort-ardoise"] .gros{color:var(--page);box-shadow:0 0 12px rgba(var(--lueur),.5)}
+:root[data-theme="futur-confort-ardoise"] .barre i{box-shadow:0 0 6px currentColor}
+:root[data-theme="futur-confort-ardoise"] body{background: linear-gradient(rgba(var(--lueur),.022) 1px,transparent 1px) 0 0/32px 32px, linear-gradient(90deg,rgba(var(--lueur),.022) 1px,transparent 1px) 0 0/32px 32px, radial-gradient(ellipse at top,var(--haut),var(--page) 60%) fixed}
+:root[data-theme="futur-confort-ardoise"] h1,:root[data-theme="futur-confort-ardoise"] .carte-info .val{text-shadow:none}
+:root[data-theme="futur-confort-ardoise"] h1,:root[data-theme="futur-confort-ardoise"] h2{letter-spacing:.08em}
+:root[data-theme="futur-confort-ardoise"] nav,:root[data-theme="futur-confort-ardoise"] .barre i,:root[data-theme="futur-confort-ardoise"] .gros{box-shadow:none}
+:root[data-theme="futur-confort-ardoise"] .carte-info .val{color:var(--texte)}
+:root[data-theme="futur-confort-ivoire"]{color-scheme:dark;--page:#16181c;--surface:#1d2025;--surface-2:#252930;--texte:#e6dfcc;--texte-2:#b2ab96;--doux:#827d6f;--grille:#2c3038;--axe:#3b4048;--bord:rgba(189,181,160,.12);--bord-fort:rgba(189,181,160,.24);--accent:#b8b09b;--accent-ink:#ddd5c0;--accent-piste:#34322c;--vert:#7fb98a;--vert-ink:#a2d1aa;--orange:#e0a458;--rouge:#d47f6f;--rouge-ink:#e6a395;--lueur:189,181,160;--haut:#20242b;--or:#d9b25f;--rayon:4px}
+:root[data-theme="futur-confort-ivoire"] body{background: linear-gradient(rgba(var(--lueur),.035) 1px,transparent 1px) 0 0/32px 32px, linear-gradient(90deg,rgba(var(--lueur),.035) 1px,transparent 1px) 0 0/32px 32px, radial-gradient(ellipse at top,var(--haut),var(--page) 60%) fixed}
+:root[data-theme="futur-confort-ivoire"] nav{background:color-mix(in srgb,var(--page) 85%,transparent);border-top:1px solid rgba(var(--lueur),.35);box-shadow:0 0 18px rgba(var(--lueur),.15)}
+:root[data-theme="futur-confort-ivoire"] h1,:root[data-theme="futur-confort-ivoire"] h2{letter-spacing:.12em;text-transform:uppercase}
+:root[data-theme="futur-confort-ivoire"] h1{text-shadow:0 0 12px rgba(var(--lueur),.55)}
+:root[data-theme="futur-confort-ivoire"] .carte-info .val{font-family:var(--mono)}
+:root[data-theme="futur-confort-ivoire"] .carte-info .val{color:var(--accent-ink);text-shadow:0 0 10px rgba(var(--lueur),.45)}
+:root[data-theme="futur-confort-ivoire"] .carte-info,:root[data-theme="futur-confort-ivoire"] .panneau,:root[data-theme="futur-confort-ivoire"] .carte-info{border-radius:4px;background:linear-gradient(180deg,color-mix(in srgb,var(--surface-2) 92%,transparent),color-mix(in srgb,var(--surface) 92%,transparent))}
+:root[data-theme="futur-confort-ivoire"] .gros{color:var(--page);box-shadow:0 0 12px rgba(var(--lueur),.5)}
+:root[data-theme="futur-confort-ivoire"] .barre i{box-shadow:0 0 6px currentColor}
+:root[data-theme="futur-confort-ivoire"] body{background: linear-gradient(rgba(var(--lueur),.022) 1px,transparent 1px) 0 0/32px 32px, linear-gradient(90deg,rgba(var(--lueur),.022) 1px,transparent 1px) 0 0/32px 32px, radial-gradient(ellipse at top,var(--haut),var(--page) 60%) fixed}
+:root[data-theme="futur-confort-ivoire"] h1,:root[data-theme="futur-confort-ivoire"] .carte-info .val{text-shadow:none}
+:root[data-theme="futur-confort-ivoire"] h1,:root[data-theme="futur-confort-ivoire"] h2{letter-spacing:.08em}
+:root[data-theme="futur-confort-ivoire"] nav,:root[data-theme="futur-confort-ivoire"] .barre i,:root[data-theme="futur-confort-ivoire"] .gros{box-shadow:none}
+:root[data-theme="futur-confort-ivoire"] .carte-info .val{color:var(--texte)}
+:root[data-theme="futur-confort-pervenche"]{color-scheme:dark;--page:#16181c;--surface:#1d2025;--surface-2:#252930;--texte:#e6dfcc;--texte-2:#b2ab96;--doux:#827d6f;--grille:#2c3038;--axe:#3b4048;--bord:rgba(154,152,208,.13);--bord-fort:rgba(154,152,208,.26);--accent:#9a98d0;--accent-ink:#c0bfe8;--accent-piste:#2d2c42;--vert:#7fb98a;--vert-ink:#a2d1aa;--orange:#e0a458;--rouge:#d47f6f;--rouge-ink:#e6a395;--lueur:154,152,208;--haut:#20242b;--or:#d9b25f;--rayon:4px}
+:root[data-theme="futur-confort-pervenche"] body{background: linear-gradient(rgba(var(--lueur),.035) 1px,transparent 1px) 0 0/32px 32px, linear-gradient(90deg,rgba(var(--lueur),.035) 1px,transparent 1px) 0 0/32px 32px, radial-gradient(ellipse at top,var(--haut),var(--page) 60%) fixed}
+:root[data-theme="futur-confort-pervenche"] nav{background:color-mix(in srgb,var(--page) 85%,transparent);border-top:1px solid rgba(var(--lueur),.35);box-shadow:0 0 18px rgba(var(--lueur),.15)}
+:root[data-theme="futur-confort-pervenche"] h1,:root[data-theme="futur-confort-pervenche"] h2{letter-spacing:.12em;text-transform:uppercase}
+:root[data-theme="futur-confort-pervenche"] h1{text-shadow:0 0 12px rgba(var(--lueur),.55)}
+:root[data-theme="futur-confort-pervenche"] .carte-info .val{font-family:var(--mono)}
+:root[data-theme="futur-confort-pervenche"] .carte-info .val{color:var(--accent-ink);text-shadow:0 0 10px rgba(var(--lueur),.45)}
+:root[data-theme="futur-confort-pervenche"] .carte-info,:root[data-theme="futur-confort-pervenche"] .panneau,:root[data-theme="futur-confort-pervenche"] .carte-info{border-radius:4px;background:linear-gradient(180deg,color-mix(in srgb,var(--surface-2) 92%,transparent),color-mix(in srgb,var(--surface) 92%,transparent))}
+:root[data-theme="futur-confort-pervenche"] .gros{color:var(--page);box-shadow:0 0 12px rgba(var(--lueur),.5)}
+:root[data-theme="futur-confort-pervenche"] .barre i{box-shadow:0 0 6px currentColor}
+:root[data-theme="futur-confort-pervenche"] body{background: linear-gradient(rgba(var(--lueur),.022) 1px,transparent 1px) 0 0/32px 32px, linear-gradient(90deg,rgba(var(--lueur),.022) 1px,transparent 1px) 0 0/32px 32px, radial-gradient(ellipse at top,var(--haut),var(--page) 60%) fixed}
+:root[data-theme="futur-confort-pervenche"] h1,:root[data-theme="futur-confort-pervenche"] .carte-info .val{text-shadow:none}
+:root[data-theme="futur-confort-pervenche"] h1,:root[data-theme="futur-confort-pervenche"] h2{letter-spacing:.08em}
+:root[data-theme="futur-confort-pervenche"] nav,:root[data-theme="futur-confort-pervenche"] .barre i,:root[data-theme="futur-confort-pervenche"] .gros{box-shadow:none}
+:root[data-theme="futur-confort-pervenche"] .carte-info .val{color:var(--texte)}
+:root[data-theme="futur-vert"]{color-scheme:dark;--page:#020a04;--surface:#04140a;--surface-2:#072011;--texte:#c8ffd8;--texte-2:#7fcf98;--doux:#4f8a62;--grille:#0b2a16;--axe:#124022;--bord:rgba(57,255,120,.16);--bord-fort:rgba(57,255,120,.34);--accent:#39ff78;--accent-ink:#8affb0;--accent-piste:#08361a;--vert:#d4ff5e;--vert-ink:#e2ff8f;--orange:#ffd23f;--rouge:#ff5f56;--rouge-ink:#ff8f88;--lueur:57,255,120;--haut:#06200f;--or:#ffd23f;--rayon:4px}
+:root[data-theme="futur-vert"] body{background: linear-gradient(rgba(var(--lueur),.035) 1px,transparent 1px) 0 0/32px 32px, linear-gradient(90deg,rgba(var(--lueur),.035) 1px,transparent 1px) 0 0/32px 32px, radial-gradient(ellipse at top,var(--haut),var(--page) 60%) fixed}
+:root[data-theme="futur-vert"] nav{background:color-mix(in srgb,var(--page) 85%,transparent);border-top:1px solid rgba(var(--lueur),.35);box-shadow:0 0 18px rgba(var(--lueur),.15)}
+:root[data-theme="futur-vert"] h1,:root[data-theme="futur-vert"] h2{letter-spacing:.12em;text-transform:uppercase}
+:root[data-theme="futur-vert"] h1{text-shadow:0 0 12px rgba(var(--lueur),.55)}
+:root[data-theme="futur-vert"] .carte-info .val{font-family:var(--mono)}
+:root[data-theme="futur-vert"] .carte-info .val{color:var(--accent-ink);text-shadow:0 0 10px rgba(var(--lueur),.45)}
+:root[data-theme="futur-vert"] .carte-info,:root[data-theme="futur-vert"] .panneau,:root[data-theme="futur-vert"] .carte-info{border-radius:4px;background:linear-gradient(180deg,color-mix(in srgb,var(--surface-2) 92%,transparent),color-mix(in srgb,var(--surface) 92%,transparent))}
+:root[data-theme="futur-vert"] .gros{color:var(--page);box-shadow:0 0 12px rgba(var(--lueur),.5)}
+:root[data-theme="futur-vert"] .barre i{box-shadow:0 0 6px currentColor}
+:root[data-theme="futur-vert"] body{font-family:var(--mono);font-size:13px}
+:root[data-theme="futur-vert"] h1{text-shadow:0 0 8px rgba(57,255,120,.8)}
+:root[data-theme="futur-violet"]{color-scheme:dark;--page:#08040f;--surface:#120a20;--surface-2:#1b1030;--texte:#efe2ff;--texte-2:#b79ad8;--doux:#7b6596;--grille:#241640;--axe:#34205a;--bord:rgba(190,110,255,.18);--bord-fort:rgba(190,110,255,.36);--accent:#b66dff;--accent-ink:#d5a8ff;--accent-piste:#2b1450;--vert:#2ee6a8;--vert-ink:#5cf5c0;--orange:#ffd23f;--rouge:#ff4f9a;--rouge-ink:#ff86b8;--lueur:182,109,255;--haut:#1d0d3a;--or:#ffd23f;--rayon:4px}
+:root[data-theme="futur-violet"] body{background: linear-gradient(rgba(var(--lueur),.035) 1px,transparent 1px) 0 0/32px 32px, linear-gradient(90deg,rgba(var(--lueur),.035) 1px,transparent 1px) 0 0/32px 32px, radial-gradient(ellipse at top,var(--haut),var(--page) 60%) fixed}
+:root[data-theme="futur-violet"] nav{background:color-mix(in srgb,var(--page) 85%,transparent);border-top:1px solid rgba(var(--lueur),.35);box-shadow:0 0 18px rgba(var(--lueur),.15)}
+:root[data-theme="futur-violet"] h1,:root[data-theme="futur-violet"] h2{letter-spacing:.12em;text-transform:uppercase}
+:root[data-theme="futur-violet"] h1{text-shadow:0 0 12px rgba(var(--lueur),.55)}
+:root[data-theme="futur-violet"] .carte-info .val{font-family:var(--mono)}
+:root[data-theme="futur-violet"] .carte-info .val{color:var(--accent-ink);text-shadow:0 0 10px rgba(var(--lueur),.45)}
+:root[data-theme="futur-violet"] .carte-info,:root[data-theme="futur-violet"] .panneau,:root[data-theme="futur-violet"] .carte-info{border-radius:4px;background:linear-gradient(180deg,color-mix(in srgb,var(--surface-2) 92%,transparent),color-mix(in srgb,var(--surface) 92%,transparent))}
+:root[data-theme="futur-violet"] .gros{color:var(--page);box-shadow:0 0 12px rgba(var(--lueur),.5)}
+:root[data-theme="futur-violet"] .barre i{box-shadow:0 0 6px currentColor}
+:root[data-theme="mercure"]{color-scheme:dark;--page:#121417;--surface:#1f2226;--surface-2:#2b3036;--texte:#e8ebee;--texte-2:#aab1b8;--doux:#84868a;--grille:#33363a;--axe:#4b4e52;--bord:rgba(232,235,238,.10);--bord-fort:rgba(232,235,238,.20);--accent:#b8c4d0;--accent-ink:#d3dce5;--accent-piste:#41464b;--vert:#5fbf8a;--vert-ink:#86d9aa;--orange:#d9b04a;--rouge:#d9675f;--rouge-ink:#f09a94;--lueur:184,196,208;--haut:#121417;--or:#d9b04a}
+:root[data-theme="mercure"] body{background:linear-gradient(180deg,#1b1e22,#121417) fixed,var(--page)}
+:root[data-theme="mercure"] .carte-info,:root[data-theme="mercure"] .panneau,:root[data-theme="mercure"] .carte-info{background:linear-gradient(180deg,#2a2f35,#1f2327);border:1px solid rgba(255,255,255,.12);box-shadow:inset 0 1px 0 rgba(255,255,255,.10),0 6px 18px rgba(0,0,0,.45);border-radius:6px}
+:root[data-theme="mercure"] h1,:root[data-theme="mercure"] h2{letter-spacing:.14em;text-transform:uppercase;font-weight:600}
+:root[data-theme="mercure"] h1{background:linear-gradient(180deg,#ffffff,#9aa4ae);-webkit-background-clip:text;background-clip:text;color:transparent}
+:root[data-theme="mercure"] .gros{background:linear-gradient(180deg,#e2e8ee,#aab4be);border-color:#8a949e;color:#16181b}
+:root[data-theme="mercure"] .barre i:not(.neg){background:linear-gradient(180deg,#dfe5ea,#9aa4ae)}
+:root[data-theme="blueprint"]{color-scheme:dark;--page:#0f3a6b;--surface:#124a85;--surface-2:#1a5a9e;--texte:#eaf4ff;--texte-2:#c4dcf5;--doux:#7e9fc2;--grille:#285b91;--axe:#426fa0;--bord:rgba(234,244,255,.10);--bord-fort:rgba(234,244,255,.20);--accent:#8fd3ff;--accent-ink:#b3e1ff;--accent-piste:#2e68a0;--vert:#7fe0a0;--vert-ink:#9bf0b8;--orange:#ffd166;--rouge:#ff9a8a;--rouge-ink:#ffb8ac;--lueur:143,211,255;--haut:#0f3a6b;--or:#ffd166}
+:root[data-theme="blueprint"] body{font-family:"Lucida Console","Courier New",monospace;font-size:13px;background:linear-gradient(rgba(255,255,255,.07) 1px,transparent 1px) 0 0/24px 24px,linear-gradient(90deg,rgba(255,255,255,.07) 1px,transparent 1px) 0 0/24px 24px,var(--page)}
+:root[data-theme="blueprint"] .carte-info,:root[data-theme="blueprint"] .panneau,:root[data-theme="blueprint"] .carte-info{border:1px dashed rgba(234,244,255,.55);border-radius:2px;box-shadow:none}
+:root[data-theme="blueprint"] h1,:root[data-theme="blueprint"] h2{text-transform:uppercase;letter-spacing:.1em}
+:root[data-theme="blueprint"] .gros,:root[data-theme="blueprint"] .second{border-radius:2px}
+:root[data-theme="blueprint"] .barre,:root[data-theme="blueprint"] .barre>div{border-radius:0}
+:root[data-theme="cartoon"]{color-scheme:light;--page:#fff6dc;--surface:#ffffff;--surface-2:#fff1c2;--texte:#1a1a1a;--texte-2:#3b3b3b;--doux:#6b6b6b;--grille:#efe0ad;--axe:#1a1a1a;--bord:rgba(26,26,26,.22);--bord-fort:#1a1a1a;--accent:#2f80ed;--accent-ink:#1655b0;--accent-piste:#d6e6ff;--vert:#27ae60;--vert-ink:#167a3e;--orange:#f2c94c;--rouge:#eb5757;--rouge-ink:#b3261e;--lueur:47,128,237;--haut:#fff6dc;--or:#f2c94c;--rayon:16px}
+:root[data-theme="cartoon"] body{background:radial-gradient(rgba(242,153,74,.22) 1.6px,transparent 1.8px) 0 0/16px 16px,#fff6dc}
+:root[data-theme="cartoon"] nav{background:#ffd23f;border-top:4px solid #1a1a1a}
+:root[data-theme="cartoon"] h1,:root[data-theme="cartoon"] h2,:root[data-theme="cartoon"] .carte-info .val{font-family:"Comic Sans MS","Comic Neue","Chalkboard SE","Segoe Print",cursive}
+:root[data-theme="cartoon"] h1{font-size:24px;text-shadow:3px 3px 0 #ffd23f}
+:root[data-theme="cartoon"] .carte-info,:root[data-theme="cartoon"] .panneau,:root[data-theme="cartoon"] .carte-info{border:3px solid #1a1a1a}
+:root[data-theme="cartoon"] .gros,:root[data-theme="cartoon"] .second{border:2px solid #1a1a1a;box-shadow:2px 2px 0 #1a1a1a}
+:root[data-theme="cartoon"] .second{border-color:transparent;box-shadow:none}
+:root[data-theme="cartoon"] .gros:active,:root[data-theme="cartoon"] .second:active{transform:translate(2px,2px);box-shadow:none}
+:root[data-theme="cartoon"] .barre i{box-shadow:inset 0 0 0 2px #1a1a1a;border-radius:6px}
+:root[data-theme="licorne"]{color-scheme:light;--page:#fdf2fb;--surface:#fffaff;--surface-2:#f6e8f7;--texte:#3b2445;--texte-2:#6a4f75;--doux:#9781a0;--grille:#efdcf1;--axe:#dcc3e0;--bord:rgba(120,60,140,.14);--bord-fort:rgba(120,60,140,.26);--accent:#b545cf;--accent-ink:#8e2aa6;--accent-piste:#f1d2f7;--vert:#1fae95;--vert-ink:#0b6656;--orange:#f4a73b;--rouge:#e94f86;--rouge-ink:#b8285c;--lueur:181,69,207;--haut:#fdf2fb;--or:#f4a73b}
+:root[data-theme="licorne"] body{background:linear-gradient(135deg,#fdeef9 0%,#efe9ff 35%,#e6f7f6 70%,#fff6e6 100%) fixed}
+:root[data-theme="licorne"] nav{border-top:3px solid transparent;border-image:linear-gradient(90deg,#ff9ad5,#c49bff,#8fd3ff,#8ff0c8,#ffe08a) 1}
+:root[data-theme="licorne"] h1{background:linear-gradient(90deg,#c13fb3,#7b5cf0,#2a9fd6);-webkit-background-clip:text;background-clip:text;color:transparent}
+:root[data-theme="licorne"] .carte-info,:root[data-theme="licorne"] .panneau{border-radius:18px}
+:root[data-theme="licorne"] .gros{background:linear-gradient(90deg,#a8379b,#6a4fd0);border-color:transparent}
+:root[data-theme="licorne-hard"]{color-scheme:light;--page:#ffe0f2;--surface:#fff6fb;--surface-2:#ffe6f4;--texte:#4b0a3d;--texte-2:#7a2a68;--doux:#b0679f;--grille:#ffd0ea;--axe:#f7b3da;--bord:rgba(255,20,147,.22);--bord-fort:rgba(255,20,147,.42);--accent:#e6178f;--accent-ink:#ad006b;--accent-piste:#ffc9e8;--vert:#14a883;--vert-ink:#00704f;--orange:#ffa21f;--rouge:#ff2d6f;--rouge-ink:#b5003f;--lueur:230,23,143;--haut:#ffe0f2;--or:#ffa21f}
+:root[data-theme="licorne-hard"] body{background:radial-gradient(circle,rgba(255,255,255,.95) 0 1.5px,transparent 2.5px) 0 0/70px 70px,radial-gradient(circle,rgba(255,255,255,.8) 0 1px,transparent 2px) 35px 35px/70px 70px,linear-gradient(135deg,#ffb8e2 0%,#ffd1ee 18%,#ead0ff 36%,#cfe6ff 54%,#cdfbe4 72%,#fff1b8 90%,#ffc6e6 100%);background-attachment:fixed}
+:root[data-theme="licorne-hard"] body::before{content:"💖 🦄 🌈 ✨ 💕 🎀 🍭 💗 🌸 ⭐ 💖 🦄 🌈 ✨ 💕 🎀 🍭 💗 🌸 ⭐ 💖 🦄 🌈 ✨ 💕 🎀 🍭 💗 🌸 ⭐ 💖 🦄 🌈 ✨ 💕 🎀 🍭 💗 🌸 ⭐ 💖 🦄 🌈 ✨ 💕 🎀 🍭 💗 🌸 ⭐ 💖 🦄 🌈 ✨ 💕 🎀 🍭 💗 🌸 ⭐ 💖 🦄 🌈 ✨ 💕 🎀 🍭 💗 🌸 ⭐ 💖 🦄 🌈 ✨ 💕 🎀 🍭 💗 🌸 ⭐ 💖 🦄 🌈 ✨ 💕 🎀 🍭 💗 🌸 ⭐ 💖 🦄 🌈 ✨ 💕 🎀 🍭 💗 🌸 ⭐ 💖 🦄 🌈 ✨ 💕 🎀 🍭 💗 🌸 ⭐ 💖 🦄 🌈 ✨ 💕 🎀 🍭 💗 🌸 ⭐ 💖 🦄 🌈 ✨ 💕 🎀 🍭 💗 🌸 ⭐ 💖 🦄 🌈 ✨ 💕 🎀 🍭 💗 🌸 ⭐ 💖 🦄 🌈 ✨ 💕 🎀 🍭 💗 🌸 ⭐ 💖 🦄 🌈 ✨ 💕 🎀 🍭 💗 🌸 ⭐ 💖 🦄 🌈 ✨ 💕 🎀 🍭 💗 🌸 ⭐ 💖 🦄 🌈 ✨ 💕 🎀 🍭 💗 🌸 ⭐ 💖 🦄 🌈 ✨ 💕 🎀 🍭 💗 🌸 ⭐ 💖 🦄 🌈 ✨ 💕 🎀 🍭 💗 🌸 ⭐ 💖 🦄 🌈 ✨ 💕 🎀 🍭 💗 🌸 ⭐ 💖 🦄 🌈 ✨ 💕 🎀 🍭 💗 🌸 ⭐ 💖 🦄 🌈 ✨ 💕 🎀 🍭 💗 🌸 ⭐ 💖 🦄 🌈 ✨ 💕 🎀 🍭 💗 🌸 ⭐ 💖 🦄 🌈 ✨ 💕 🎀 🍭 💗 🌸 ⭐ 💖 🦄 🌈 ✨ 💕 🎀 🍭 💗 🌸 ⭐ 💖 🦄 🌈 ✨ 💕 🎀 🍭 💗 🌸 ⭐ 💖 🦄 🌈 ✨ 💕 🎀 🍭 💗 🌸 ⭐ 💖 🦄 🌈 ✨ 💕 🎀 🍭 💗 🌸 ⭐ 💖 🦄 🌈 ✨ 💕 🎀 🍭 💗 🌸 ⭐ 💖 🦄 🌈 ✨ 💕 🎀 🍭 💗 🌸 ⭐ 💖 🦄 🌈 ✨ 💕 🎀 🍭 💗 🌸 ⭐ 💖 🦄 🌈 ✨ 💕 🎀 🍭 💗 🌸 ⭐ 💖 🦄 🌈 ✨ 💕 🎀 🍭 💗 🌸 ⭐ 💖 🦄 🌈 ✨ 💕 🎀 🍭 💗 🌸 ⭐ 💖 🦄 🌈 ✨ 💕 🎀 🍭 💗 🌸 ⭐ 💖 🦄 🌈 ✨ 💕 🎀 🍭 💗 🌸 ⭐ 💖 🦄 🌈 ✨ 💕 🎀 🍭 💗 🌸 ⭐ 💖 🦄 🌈 ✨ 💕 🎀 🍭 💗 🌸 ⭐ 💖 🦄 🌈 ✨ 💕 🎀 🍭 💗 🌸 ⭐ 💖 🦄 🌈 ✨ 💕 🎀 🍭 💗 🌸 ⭐ 💖 🦄 🌈 ✨ 💕 🎀 🍭 💗 🌸 ⭐ 💖 🦄 🌈 ✨ 💕 🎀 🍭 💗 🌸 ⭐ 💖 🦄 🌈 ✨ 💕 🎀 🍭 💗 🌸 ⭐ 💖 🦄 🌈 ✨ 💕 🎀 🍭 💗 🌸 ⭐ 💖 🦄 🌈 ✨ 💕 🎀 🍭 💗 🌸 ⭐ 💖 🦄 🌈 ✨ 💕 🎀 🍭 💗 🌸 ⭐ 💖 🦄 🌈 ✨ 💕 🎀 🍭 💗 🌸 ⭐ 💖 🦄 🌈 ✨ 💕 🎀 🍭 💗 🌸 ⭐ 💖 🦄 🌈 ✨ 💕 🎀 🍭 💗 🌸 ⭐";position:fixed;top:-60%;left:-20%;width:140%;height:220%;z-index:-1;pointer-events:none;overflow:hidden;font-size:34px;line-height:84px;word-spacing:40px;text-align:center;opacity:.38;transform:rotate(-10deg)}
+@media (prefers-reduced-motion:no-preference){:root[data-theme="licorne-hard"] body::before{animation:licorne-hard-pluie 12s linear infinite}}
+:root[data-theme="licorne-hard"] h1{animation:licorne-hard-arc 6s linear infinite}
+:root[data-theme="licorne-hard"] .carte-info::after,:root[data-theme="licorne-hard"] .panneau::after{animation:licorne-hard-coeur 1.6s ease-in-out infinite}
+:root[data-theme="licorne-hard"] nav{border-top:5px solid transparent;border-image:linear-gradient(90deg,#ff4fa8,#ff9a3c,#ffd93c,#4fd67a,#3cb4ff,#a46bff,#ff4fa8) 1}
+:root[data-theme="licorne-hard"] h1,:root[data-theme="licorne-hard"] h2{font-family:"Segoe Print","Comic Sans MS",cursive}
+:root[data-theme="licorne-hard"] h1{font-size:26px;font-weight:700;background:linear-gradient(90deg,#e8178f,#ff7a1a,#e0a800,#1fa65a,#1a86e0,#8a3cff,#e8178f) 0 0/400px 100%;-webkit-background-clip:text;background-clip:text;color:transparent;filter:drop-shadow(0 2px 0 #fff)}
+:root[data-theme="licorne-hard"] h2::after{content:" 💕"}
+:root[data-theme="licorne-hard"] .carte-info,:root[data-theme="licorne-hard"] .panneau,:root[data-theme="licorne-hard"] .carte-info{position:relative;border:2px solid #ff9fd6;border-radius:26px}
+:root[data-theme="licorne-hard"] .carte-info::after,:root[data-theme="licorne-hard"] .panneau::after{content:"💖";position:absolute;top:-12px;right:-8px;font-size:24px;line-height:1;pointer-events:none;transform:rotate(14deg)}
+:root[data-theme="licorne-hard"] .carte-info .val{color:#c8007a;text-shadow:0 2px 0 #ffd1ec}
+:root[data-theme="licorne-hard"] .gros,:root[data-theme="licorne-hard"] .second{border-radius:999px}
+:root[data-theme="licorne-hard"] .gros{background:linear-gradient(90deg,#c8007a,#8a2be2);border-color:transparent;box-shadow:0 3px 0 #ff9fd6}
+:root[data-theme="licorne-hard"] .barre,:root[data-theme="licorne-hard"] .barre>div{border-radius:999px}
+:root[data-theme="licorne-hard"] .barre i:not(.neg){background:linear-gradient(90deg,#ff4fa8,#ff9a3c,#ffd93c,#4fd67a,#3cb4ff,#a46bff)}
+@keyframes licorne-hard-pluie{from{transform:rotate(-10deg) translateY(0)}to{transform:rotate(-10deg) translateY(84px)}}
+@keyframes licorne-hard-arc{from{background-position:0 0}to{background-position:400px 0}}
+@keyframes licorne-hard-coeur{0%,100%{transform:rotate(14deg) scale(1)}50%{transform:rotate(14deg) scale(1.25)}}
+:root[data-theme="manga"]{color-scheme:light;--page:#f6f6f6;--surface:#ffffff;--surface-2:#ececec;--texte:#111111;--texte-2:#444444;--doux:#888888;--grille:#e7e7e7;--axe:#cbcbcb;--bord:rgba(17,17,17,.10);--bord-fort:rgba(17,17,17,.18);--accent:#d9001b;--accent-ink:#b00016;--accent-piste:#f7c7cd;--vert:#1a7f37;--vert-ink:#14602a;--orange:#e6a000;--rouge:#d9001b;--rouge-ink:#b00016;--lueur:217,0,27;--haut:#f6f6f6;--or:#e6a000}
+:root[data-theme="manga"] body{background:radial-gradient(circle,rgba(0,0,0,.14) 1px,transparent 1.4px) 0 0/7px 7px,var(--page)}
+:root[data-theme="manga"] h1,:root[data-theme="manga"] h2{font-family:Impact,"Arial Black",sans-serif;font-weight:400;letter-spacing:.03em;text-transform:uppercase}
+:root[data-theme="manga"] h1{font-size:26px;display:inline-block;transform:skew(-6deg)}
+:root[data-theme="manga"] .carte-info,:root[data-theme="manga"] .panneau,:root[data-theme="manga"] .carte-info{border:2px solid #111;border-radius:0;box-shadow:4px 4px 0 #111}
+:root[data-theme="manga"] .gros,:root[data-theme="manga"] .second{border:2px solid #111;border-radius:0}
+:root[data-theme="manga"] .gros{box-shadow:2px 2px 0 #111}
+:root[data-theme="manga"] .barre{border:1px solid #111;background:#fff}
+:root[data-theme="manga"] .barre,:root[data-theme="manga"] .barre>div{border-radius:0}
+:root[data-theme="manga"] .barre i:not(.neg){background:repeating-linear-gradient(45deg,#111 0 3px,#fff 3px 6px)}
+:root[data-theme="memphis"]{color-scheme:light;--page:#fff7e6;--surface:#ffffff;--surface-2:#fdeccf;--texte:#1b1b3a;--texte-2:#4a4a72;--doux:#878797;--grille:#e8e8eb;--axe:#cdcdd4;--bord:rgba(27,27,58,.10);--bord-fort:rgba(27,27,58,.18);--accent:#e0307f;--accent-ink:#b01560;--accent-piste:#f8d1e3;--vert:#00a896;--vert-ink:#00695e;--orange:#f2b705;--rouge:#e0353a;--rouge-ink:#b3222a;--lueur:224,48,127;--haut:#fff7e6;--or:#f2b705}
+:root[data-theme="memphis"] body{background:linear-gradient(135deg,transparent 0 46%,rgba(255,79,154,.16) 46% 54%,transparent 54%) 0 0/90px 90px,radial-gradient(circle at 20px 20px,rgba(0,184,169,.22) 0 8px,transparent 9px) 0 0/120px 120px,radial-gradient(circle at 70px 80px,rgba(255,210,63,.35) 0 6px,transparent 7px) 0 0/120px 120px,var(--page)}
+:root[data-theme="memphis"] .carte-info,:root[data-theme="memphis"] .panneau,:root[data-theme="memphis"] .carte-info{border:3px solid var(--texte);border-radius:14px;box-shadow:6px 6px 0 #00b8a9}
+:root[data-theme="memphis"] h1{text-decoration:underline wavy #ff4f9a;text-decoration-thickness:3px;text-underline-offset:6px}
+:root[data-theme="memphis"] .gros{box-shadow:3px 3px 0 var(--texte)}
+:root[data-theme="memphis"] .gros,:root[data-theme="memphis"] .second{border-radius:99px}
+:root[data-theme="hard-licorne"]{color-scheme:dark;--page:#0b0809;--surface:#161113;--surface-2:#211a1c;--texte:#ece4dc;--texte-2:#b9aca3;--doux:#85776f;--grille:#2a2124;--axe:#3d3134;--bord:rgba(255,40,40,.18);--bord-fort:rgba(255,40,40,.36);--accent:#e0242c;--accent-ink:#ff5f5f;--accent-piste:#3a1416;--vert:#3fbf6a;--vert-ink:#6ee08f;--orange:#e8a020;--rouge:#ff2d55;--rouge-ink:#ff7088;--lueur:224,36,44;--haut:#0b0809;--or:#e8a020}
+:root[data-theme="hard-licorne"] body{background:radial-gradient(ellipse 80% 60% at 50% -10%,rgba(150,0,10,.45),transparent 70%),radial-gradient(ellipse 60% 50% at 50% 120%,rgba(90,0,0,.5),transparent 70%),repeating-linear-gradient(115deg,rgba(255,255,255,.012) 0 2px,transparent 2px 9px),#0b0809;background-attachment:fixed}
+:root[data-theme="hard-licorne"] body::before{content:"";position:fixed;right:104px;bottom:58px;width:380px;height:36px;z-index:50;pointer-events:none;transform-origin:100% 50%;transform:rotate(-20deg);clip-path:polygon(100% 30%,100% 70%,0 100%,0 0);background:repeating-linear-gradient(90deg,rgba(0,0,0,.28) 0 8px,transparent 8px 26px),linear-gradient(180deg,#ff1a1a 0 16.6%,#ff8c00 16.6% 33.3%,#ffe600 33.3% 50%,#00d84a 50% 66.6%,#1a8cff 66.6% 83.3%,#a020f0 83.3%);filter:drop-shadow(0 0 6px rgba(255,255,255,.25))}
+:root[data-theme="hard-licorne"] body::after{content:"🦄";position:fixed;right:14px;bottom:30px;z-index:51;pointer-events:none;font-size:96px;line-height:1;filter:grayscale(1) brightness(.55) contrast(1.6) drop-shadow(0 0 3px #ff1a1a) drop-shadow(0 0 14px rgba(255,0,0,.85));transform-origin:70% 90%}
+@media (prefers-reduced-motion:no-preference){:root[data-theme="hard-licorne"] body::before{animation:hard-licorne-vomi .35s linear infinite}}
+:root[data-theme="hard-licorne"] body::after{animation:hard-licorne-headbang .9s ease-in-out infinite}
+:root[data-theme="hard-licorne"] nav{background:rgba(12,6,7,.94);border-top:2px solid #8f0d12}
+:root[data-theme="hard-licorne"] h1,:root[data-theme="hard-licorne"] h2{font-family:"Old English Text MT","Chiller",Impact,serif;font-weight:400;letter-spacing:.02em}
+:root[data-theme="hard-licorne"] h1{font-size:30px;color:#ff2a2a;text-shadow:0 0 6px rgba(255,0,0,.55),2px 3px 0 #000}
+:root[data-theme="hard-licorne"] h1::before{content:"🤘 "}
+:root[data-theme="hard-licorne"] h1::after{content:" 🤘"}
+:root[data-theme="hard-licorne"] h2{font-size:20px;color:#ff5f5f}
+:root[data-theme="hard-licorne"] .carte-info,:root[data-theme="hard-licorne"] .panneau,:root[data-theme="hard-licorne"] .carte-info{background:rgba(22,17,19,.93);border:1px solid #4a0d10;border-top:2px solid #8f0d12;border-radius:0;box-shadow:0 0 0 1px #000,0 10px 30px rgba(0,0,0,.7),inset 0 0 40px rgba(120,0,0,.12)}
+:root[data-theme="hard-licorne"] .carte-info .val{color:#ff3b3b;text-shadow:0 0 10px rgba(255,0,0,.45)}
+:root[data-theme="hard-licorne"] .gros,:root[data-theme="hard-licorne"] .second{border-radius:0}
+:root[data-theme="hard-licorne"] .gros{background:linear-gradient(180deg,#b3121a,#5c0508);border-color:#ff2a2a;text-transform:uppercase;letter-spacing:.1em}
+:root[data-theme="hard-licorne"] .barre,:root[data-theme="hard-licorne"] .barre>div{border-radius:0}
+:root[data-theme="hard-licorne"] .barre i:not(.neg){background:linear-gradient(90deg,#ff1a1a,#ff8c00,#ffe600,#00d84a,#1a8cff,#a020f0)}
+@keyframes hard-licorne-vomi{from{background-position:0 0,0 0}to{background-position:-26px 0,0 0}}
+@keyframes hard-licorne-headbang{0%,100%{transform:rotate(-4deg)}50%{transform:rotate(16deg) translateY(6px)}}

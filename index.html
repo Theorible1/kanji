@@ -12,7 +12,7 @@
 <link rel="stylesheet" href="themes.css">
 <script>/* thème appliqué avant l'affichage (pas de flash) */
 try { var t = localStorage.getItem("kanjiApp.theme"); if (t === "auto") t = matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
-  if (t && t !== "futur-confort-ardoise") document.documentElement.setAttribute("data-theme", t); } catch (e) {}</script>
+  if (t) document.documentElement.setAttribute("data-theme", t); } catch (e) {}</script>
 </head>
 <body>
 <main id="ecran"></main>

@@ -92,28 +92,18 @@
   // ---------- thème (repris du dashboard ; défaut = futuriste confort · ardoise, celui de style.css) ----------
   const THEME_DEFAUT = "futur-confort-ardoise";
   const NOMS_THEMES = Object.fromEntries((window.THEMES || []).flatMap(([, ts]) => ts));
-  // choix du thème (Options) : familles et noms courts ; COULEURS_THEMES : [fond, accent] de chaque thème (repris de themes.css) pour sa pastille
-  const FAMILLES_THEMES = [
-    ["Simples", [["auto", "auto"], ["light", "clair"], ["dark", "sombre"]]],
-    ["Confort", [["futur-confort-ardoise", "ardoise"], ["futur-confort-pervenche", "pervenche"], ["futur-confort-ivoire", "ivoire"], ["papier", "papier"], ["penombre", "pénombre"], ["futur-confort", "sombre doux"]]],
-    ["Futuristes", [["futuriste", "néon"], ["futur-ambre", "ambre"], ["futur-vert", "terminal"], ["futur-violet", "violet"]]],
-    ["Fun", [["synthwave", "synthwave"], ["holo", "holo"], ["cyberpunk", "cyberpunk"], ["licorne", "licorne"], ["lcd", "LCD rétro"], ["cartoon", "cartoon"]]],
-  ];
-  const COULEURS_THEMES = { auto: ["linear-gradient(90deg, #f6f6f3 50%, #0d0d0d 50%)", "#3987e5"], light: ["#f6f6f3", "#2a78d6"], dark: ["#0d0d0d", "#3987e5"],
-    "futur-confort-ardoise": ["#16181c", "#7ea3c4"], "futur-confort-pervenche": ["#16181c", "#9a98d0"], "futur-confort-ivoire": ["#16181c", "#b8b09b"],
-    papier: ["#efe6d3", "#2f6db5"], penombre: ["#1b1d21", "#6d9fd6"], "futur-confort": ["#16181c", "#d9b25f"],
-    futuriste: ["#05070f", "#00d8f0"], "futur-ambre": ["#0c0802", "#ffae1f"], "futur-vert": ["#020a04", "#39ff78"], "futur-violet": ["#08040f", "#b66dff"],
-    synthwave: ["#14062a", "#ff5ccd"], holo: ["#eef3f8", "#3a6df0"], cyberpunk: ["#0a0a0a", "#fcee0a"], licorne: ["#fdf2fb", "#b545cf"], lcd: ["#cfc8b8", "#1d2418"], cartoon: ["#fff6dc", "#2f80ed"] };
+  // choix du thème (Options) : familles et pastilles [fond, accent] viennent de themes.js (généré depuis THEMATOR3000 par outils/faire_themes.py)
+  const FAMILLES_THEMES = window.THEMES || [];
+  const COULEURS_THEMES = window.THEMES_COULEURS || {};
   const sombre = matchMedia("(prefers-color-scheme: dark)");
   function appliquerTheme() {
     let t = etat.reglages.theme || THEME_DEFAUT;
     if (!NOMS_THEMES[t]) t = THEME_DEFAUT;
     try { localStorage.setItem("kanjiApp.theme", t); } catch (e) {}
     if (t === "auto") t = sombre.matches ? "dark" : "light";
-    if (t === THEME_DEFAUT) document.documentElement.removeAttribute("data-theme");
-    else document.documentElement.setAttribute("data-theme", t);
+    document.documentElement.setAttribute("data-theme", t);
     // éclair des bonnes réponses : doré dans les thèmes où le vert ne ressort pas, vert ailleurs
-    document.documentElement.toggleAttribute("data-flash-or", ["futur-confort", "futur-confort-ivoire", "futur-ambre", "futur-vert", "cyberpunk", "lcd"].includes(t));
+    document.documentElement.toggleAttribute("data-flash-or", (window.THEMES_FLASH_OR || []).includes(t));
     const meta = document.querySelector('meta[name="theme-color"]');
     if (meta) meta.content = getComputedStyle(document.documentElement).getPropertyValue("--page").trim() || "#16181c";
   }
@@ -964,7 +954,7 @@
         <h3>Options</h3>
         <ul class="regles">
           <li><b>Objectif N5 / N4</b> : coche les niveaux que tu travailles (au moins un). Les nouvelles cartes, la progression et l'onglet Progrès suivent ton choix. Si tu le changes, au prochain Jouer l'appli te demande si tu gardes ou retires les cartes commencées qui n'en font plus partie. Un mot qui contient un kanji N4 est un mot N4. En N4 seul, les kanji N5 utilisés par des mots N4 sont ajoutés à tes cartes, pour qu'aucun mot ne reste bloqué.</li>
-          <li><b>Thème</b> : les thèmes du dashboard SUPERVISOR3000. Le changement est immédiat.</li>
+          <li><b>Thème</b> : les 40 thèmes de THEMATOR3000. Le changement est immédiat.</li>
           <li><b>Mes stats</b> : bonnes réponses sur tes 200 dernières cartes revues (50 % au départ, tant qu'il y a moins de 30 réponses) ; secondes par carte ; temps tenu par jour (moyenne des 7 derniers jours, après 7 jours d'utilisation) ; jours joués d'affilée ; temps total passé ; cartes déjà vues. Temps par type de carte : moyenne des 50 dernières cartes de ce type. Réussite par rang : tes 60 dernières réponses à ce rang. Tendance : tes dernières réponses comparées aux précédentes (à partir de 40 réponses).</li>
           <li><b>Mise à jour</b> : l'appli vérifie toute seule à chaque ouverture et te prévient quand une nouvelle version est prête.</li>
           <li><b>Sauvegarde</b> : ta progression est enregistrée sur ce téléphone. Fais une sauvegarde de temps en temps (fichier dans Téléchargements).</li>
