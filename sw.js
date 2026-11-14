@@ -2,10 +2,10 @@
 // Changer VERSION à chaque mise à jour des fichiers pour forcer le rafraîchissement.
 // Une nouvelle version s'installe en arrière-plan puis attend : l'appli affiche « Nouvelle version » et
 // c'est l'utilisateur qui redémarre (message MAJ). Message VERSION : renvoie la version de ce service worker.
-const VERSION = "kanji-v19";
+const VERSION = "kanji-v19.1";
 // EMPREINTE : résumé du contenu des fichiers, mis à jour tout seul par outils/empreinte.py (lancé par tester_appli.py) ;
 // elle change dès qu'un fichier change, donc le téléphone voit la nouvelle version même si VERSION n'a pas été changée.
-const EMPREINTE = "41c868f1a7";
+const EMPREINTE = "eb544728ff";
 const CACHE = `${VERSION}-${EMPREINTE}`;
 const FICHIERS = ["./", "index.html", "style.css", "app.js", "srs.js", "data.js", "manifest.webmanifest", "themes.css", "themes.js", "nihon-192.png", "nihon-512.png", "logo.svg"];
 

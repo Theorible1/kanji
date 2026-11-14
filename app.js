@@ -1,4 +1,5 @@
 // Interface de l'appli kanji. Données : window.KANJI, window.MOTS (data.js). Logique : window.SRSLib (srs.js).
+// FICHIER ASSEMBLÉ : ne pas modifier appli/app.js, mais les morceaux de kanji/source_app/ (outils/assembler_app.py, lancé par tester_appli.py).
 "use strict";
 (() => {
   const L = window.SRSLib, S = L.SRS;
@@ -142,11 +143,9 @@
     return m.seg.map(([t, l, c]) => (c === "f" || (tout && c === "k")) ? `<ruby>${esc(t)}<rt>${esc(l)}</rt></ruby>` : esc(t)).join("");
   }
   // prononciation d'un kanji : lecture au-dessus du kanji, kana qui suivent écrits après (一つ avec ひと au-dessus de 一)
-  // les on'yomi s'écrivent en katakana (les données restent en hiragana : les ids des cartes ne changent pas)
-  const kata = (s) => [...s].map((c) => (c >= "ぁ" && c <= "ゖ" ? String.fromCharCode(c.charCodeAt(0) + 0x60) : c)).join("");
-  function lectureHTML(k, l, type) {
+  function lectureHTML(k, l) {
     const d = L.decoupe(l);
-    return `${d.avant ? `(${esc(d.avant)})` : ""}<ruby>${esc(k)}<rt>${esc(type === "on" ? kata(d.rad) : d.rad)}</rt></ruby>${esc(d.okuri)}`;
+    return `${d.avant ? `(${esc(d.avant)})` : ""}<ruby>${esc(k)}<rt>${esc(d.rad)}</rt></ruby>${esc(d.okuri)}`;
   }
   // ce qu'on apprend avec une carte : classe de couleur + nom complet (question) + nom court (listes)
   const NOMS_LECT = { on: "on'yomi", kun: "kun'yomi", kana: "kana" };
@@ -178,9 +177,11 @@
   // ---------- son : lecture à voix haute par la synthèse vocale du téléphone (voix japonaise, hors ligne sur la plupart des téléphones) ----------
   const son = (kana) => ("speechSynthesis" in window ? `<button class="son" data-son="${esc(kana)}" aria-label="Écouter">🔊</button>` : "");
   const dire = (l) => { const d = L.decoupe(l); return d.avant + d.rad + d.okuri; };   // « ひと(つ) » -> ひとつ
-  function parler(texte) {
+  // auto : lecture automatique de la bonne réponse (pas de message s'il n'y a pas de voix japonaise)
+  function parler(texte, auto) {
+    if (!("speechSynthesis" in window) || !texte) return;
     const voix = speechSynthesis.getVoices(), ja = voix.find((v) => /^ja/i.test(v.lang));
-    if (voix.length && !ja) return alerte("Pas de voix japonaise sur ce téléphone (Réglages > synthèse vocale).");
+    if (voix.length && !ja) return auto ? undefined : alerte("Pas de voix japonaise sur ce téléphone (Réglages > synthèse vocale).");
     speechSynthesis.cancel();
     const u = new SpeechSynthesisUtterance(texte);
     u.lang = "ja-JP"; u.rate = 0.85;
@@ -201,7 +202,7 @@
       const sens = f.sensCartes.map((s, i) => `<span class="${x.type === "sens" && x.idx === i ? "fort" : ""}">${esc(i ? s : maj(s))}</span>`).join(", ");
       const lect = ["on", "kun", "kana"].map((t) => {
         const ls = f.lectures.filter((_, i) => f.typesLect[i] === t);
-        return ls.length ? `<div class="fiche-ligne"><span class="badge ${t}">${NOMS_LECT[t]}</span><span class="fiche-lect jp">${ls.map((l) => `<span class="${x.type === "lecture" && x.lecture === l ? "fort" : ""}">${lectureHTML(f.kanji, l, t)}</span>${son(dire(l))}`).join(" ・ ")}</span></div>` : "";
+        return ls.length ? `<div class="fiche-ligne"><span class="badge ${t}">${NOMS_LECT[t]}</span><span class="fiche-lect jp">${ls.map((l) => `<span class="${x.type === "lecture" && x.lecture === l ? "fort" : ""}">${lectureHTML(f.kanji, l)}</span>${son(dire(l))}`).join(" ・ ")}</span></div>` : "";
       }).join("");
       return `<div class="fiche">
         <div class="fiche-tete"><span class="fiche-k jp">${esc(f.kanji)}</span>${etoile(f.niveau)}
@@ -265,7 +266,6 @@
       consigne = "Que signifie ce kanji ?" + (x.fiche.sensCartes.length > 1 ? ` (un de ses ${x.fiche.sensCartes.length} sens)` : "");
     } else if (x.genre === "k") {
       g = L.qcmLecture(x.fiche, x.lecture, FICHES);
-      if (typeCarte(id).cl === "on") { g.options = g.options.map(kata); g.bonne = kata(g.bonne); }
       const aff = L.affichageLecture(x.fiche.kanji, x.lecture);
       visuel = aff === x.fiche.kanji ? `<div class="q-kanji jp">${esc(aff)}</div>` : grand(aff, esc(aff));
       consigne = "Comment ça se lit ?";
@@ -298,6 +298,9 @@
     const finir = (res, choisi) => {
       if (fini) return; fini = true;
       clearInterval(minuteur);
+      // la bonne lecture est dite à voix haute, réponse juste ou non (demande de Quentin du 14/11/2026) :
+      // carte de lecture d'un kanji ou d'un mot, et carte de sens d'un mot (on entend le mot) ; rien pour le sens d'un kanji
+      parler(x.genre === "m" ? x.mot.kana : x.type === "lecture" ? dire(x.lecture) : "", true);
       let bonneBtn = null;
       document.querySelectorAll(".opt").forEach((b) => {
         const v = b.dataset.i === "jsp" ? null : g.options[+b.dataset.i];
@@ -854,7 +857,7 @@
   function ficheKanji(k, modif) {
     const act = cartesActives(), p = maitrise(k);
     const idDe = (x) => (x.genre === "m" ? `m:${x.cle}:${x.type}` : x.type === "sens" ? `k:${x.cle}:s${x.idx}` : `k:${x.cle}:l:${x.lecture}`);
-    const nomCarteK = (x) => `${badge(typeCarte(idDe(x)), true)} ` + (x.type === "sens" ? `« ${esc(x.fiche.sensCartes[x.idx])} »` : `<span class="jp">${esc(typeCarte(idDe(x)).cl === "on" ? kata(L.reponseLecture(x.lecture)) : L.reponseLecture(x.lecture))}</span>`);
+    const nomCarteK = (x) => `${badge(typeCarte(idDe(x)), true)} ` + (x.type === "sens" ? `« ${esc(x.fiche.sensCartes[x.idx])} »` : `<span class="jp">${esc(L.reponseLecture(x.lecture))}</span>`);
     const nomCarteM = (x) => `<span class="jp">${esc(x.cle)}</span> ${badge(typeCarte(idDe(x)), true)}`;
     const selecteur = (id) => `<select class="regler" data-id="${esc(id)}" aria-label="Rang de la carte">${NOMS_REGLAGE.map((n, r) => `<option value="${r}" ${L.rangDe(etat, id) === r ? "selected" : ""}>${n}</option>`).join("")}</select>`;
     const lignes = PROPRES[k].map((id) => `<li><span>${nomCarteK(info(id))}</span>${modif ? selecteur(id) : `<span>${etatCarte(id)}</span>`}</li>`).join("");
