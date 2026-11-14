@@ -716,7 +716,7 @@
     const cle = cleProjection();
     const P = projection && projection.cle === cle ? projection.points : null;
     ecran.innerHTML = `
-      <h1><img class="logo-mini" src="nihon-192.png" alt="">Kanji JLPT <span class="sous">${{ N5: "N5", N4: "N4", N5N4: "N5 · N4" }[act.choix]}</span></h1>
+      <h1><img class="logo-mini" src="nihon-192.png" alt="">KANJINATOR 3000 <span class="sous">${{ N5: "N5", N4: "N4", N5N4: "N5 · N4" }[act.choix]}</span></h1>
       <button class="gros jouer" id="b-jouer">▶ Jouer<span>${sous}</span></button>
       <div class="carte-info temps-jour">
         <div class="tj-texte"><span>Aujourd'hui</span><b>${fini ? "✓ " : ""}${nb} carte${nb > 1 ? "s" : ""} · ${min} min</b></div>

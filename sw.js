@@ -2,7 +2,7 @@
 // Changer VERSION à chaque mise à jour des fichiers pour forcer le rafraîchissement.
 // Une nouvelle version s'installe en arrière-plan puis attend : l'appli affiche « Nouvelle version » et
 // c'est l'utilisateur qui redémarre (message MAJ). Message VERSION : renvoie la version de ce service worker.
-const VERSION = "kanji-v17";
+const VERSION = "kanji-v18";
 const FICHIERS = ["./", "index.html", "style.css", "app.js", "srs.js", "data.js", "manifest.webmanifest", "themes.css", "themes.js", "nihon-192.png", "nihon-512.png", "logo.svg"];
 
 self.addEventListener("install", (e) => {
