@@ -157,15 +157,22 @@
   }
   // ce qu'on apprend avec une carte : classe de couleur + nom complet (question) + nom court (listes)
   const NOMS_LECT = { on: "on'yomi", kun: "kun'yomi", kana: "kana" };
+  const LECTURES_MOTS = new Set(MOTS.map((m) => m.jl).filter(Boolean));
   function typeCarte(id) {
     const x = info(id);
     if (x.genre === "m" && x.type === "ecriture") return { cl: "ecr", nom: "Vocabulaire · écriture", court: "vocabulaire · écriture" };
     if (x.genre === "m") return { cl: "voc", nom: `Vocabulaire · ${x.type === "sens" ? "sens" : "lecture"}`, court: `vocabulaire · ${x.type === "sens" ? "sens" : "lecture"}` };
     if (x.type === "sens") return { cl: "sens", nom: "Kanji · sens général", court: "sens général" };
+    // v20.1 : une carte qui montre un mot (kana derrière le kanji, ou carte partagée avec un mot de vocabulaire) est étiquetée vocabulaire ;
+    // on'yomi / kun'yomi / kana seulement pour une lecture pure du kanji (demande de Quentin du 15/11/2026)
     const t = x.fiche.typesLect[x.fiche.lectures.indexOf(x.lecture)] || "kana";
+    // un mot de vocabulaire reste « vocabulaire » ; son type de lecture (on'yomi, kun'yomi) s'ajoute en petit (« sous »)
+    const estMot = LECTURES_MOTS.has(id) || L.affichageLecture(x.fiche.kanji, x.lecture) !== x.fiche.kanji
+      || x.fiche.exemples.some((e) => e.mot === x.fiche.kanji && e.kana === x.lecture);
+    if (estMot) return { cl: "voc", nom: "Vocabulaire · lecture", court: "vocabulaire · lecture", sous: NOMS_LECT[t] };
     return { cl: t, nom: `Kanji · ${NOMS_LECT[t]}`, court: NOMS_LECT[t] };
   }
-  const badge = (t, court) => `<span class="badge ${t.cl}">${esc(court ? t.court : t.nom)}</span>`;
+  const badge = (t, court) => `<span class="badge ${t.cl}">${esc(court ? t.court : t.nom)}${t.sous ? ` <small>${esc(t.sous)}</small>` : ""}</span>`;
   // l'exemple utilise-t-il cette prononciation du kanji ? (sons modifiés compris : ひ -> び ou ぴ, いち -> いっ)
   const QUE_KANA = /^[\u3040-\u30ffー]*$/;
   function exempleUtilise(k, l, e) {

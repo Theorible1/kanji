@@ -371,6 +371,7 @@ select.regler { background: var(--page); color: var(--texte); border: 1px solid 
 /* v20 : mode écriture (étiquette, question, menu sous Jouer) */
 :root { --t-ecr: #e8a85f; }
 .badge.ecr { --c: var(--t-ecr); }
+.badge small { font-size: .85em; font-weight: 600; opacity: .8; text-transform: none; letter-spacing: 0; margin-left: 2px; }
 .q-fr { text-align: center; font-size: 1.6rem; font-weight: 600; margin: 22px 0 2px; line-height: 1.3; color: var(--texte); }
 .mode-jeu { display: flex; align-items: center; justify-content: center; gap: 10px; margin: 10px 0 0; font-size: .85rem; color: var(--texte-2); }
 .mode-jeu select { font: inherit; font-family: var(--mono); padding: 8px 10px; border-radius: 8px; background: var(--page); color: var(--texte); border: 1px solid var(--bord-fort); min-height: 40px; }
