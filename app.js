@@ -189,6 +189,20 @@
     speechSynthesis.speak(u);
     window.__parle = texte;   // tests
   }
+  // échauffement : le moteur vocal d'Android met plusieurs secondes à démarrer à la 1re lecture ; on le lance au 1er toucher de l'écran (muet, volume 0)
+  if ("speechSynthesis" in window) {
+    speechSynthesis.getVoices();
+    speechSynthesis.addEventListener?.("voiceschanged", () => speechSynthesis.getVoices());
+    const chauffer = () => {
+      document.removeEventListener("pointerdown", chauffer, true);
+      try {
+        const u = new SpeechSynthesisUtterance("あ");
+        u.lang = "ja-JP"; u.volume = 0;
+        speechSynthesis.speak(u);
+      } catch (e) { /* sans importance */ }
+    };
+    document.addEventListener("pointerdown", chauffer, true);
+  }
   document.addEventListener("click", (e) => {
     const b = e.target.closest("[data-son]");
     if (b) { e.stopPropagation(); parler(b.dataset.son); }
