@@ -154,7 +154,7 @@ function aJouer(etat, maintenant) {
 }
 // carte à avancer : si un des jours à venir s'annonce plus chargé que le temps du jour (budget en s),
 // on avance la carte la mieux connue parmi celles de ce jour dont la fenêtre est déjà ouverte
-function aAvancer(etat, maintenant, budget, jours = 10) {
+function aAvancer(etat, maintenant, budget, jours = 10, garde = null) {
   const charge = {}, ouvertes = [], sec = {};
   const cout = (id) => { const ty = typeCarte(id); return sec[ty] || (sec[ty] = secondesParType(etat, ty)); };
   const fin = plusJours(maintenant, jours + 1);
@@ -163,15 +163,15 @@ function aAvancer(etat, maintenant, budget, jours = 10) {
     const f = fenetre(t);
     if (f.due <= maintenant || f.due >= fin) continue;
     charge[f.due] = (charge[f.due] || 0) + cout(id);
-    if (f.ouvre <= maintenant) ouvertes.push([id, t.rang, f.due]);
+    if (f.ouvre <= maintenant && (!garde || garde(id))) ouvertes.push([id, t.rang, f.due]);
   }
   const cand = ouvertes.filter((x) => charge[x[2]] > budget).sort((a, b) => b[1] - a[1] || a[2] - b[2] || (a[0] < b[0] ? -1 : 1));
   return cand.length ? cand[0][0] : null;
 }
-function prochaineOuverture(etat) {
+function prochaineOuverture(etat, garde = null) {
   let min = null;
-  for (const t of Object.values(etat.tuiles)) {
-    if (t.pause || t.loin || t.rang >= SRS.ACQUIS) continue;
+  for (const [id, t] of Object.entries(etat.tuiles)) {
+    if (t.pause || t.loin || t.rang >= SRS.ACQUIS || (garde && !garde(id))) continue;
     const o = fenetre(t).due;
     if (min === null || o < min) min = o;
   }
@@ -179,9 +179,9 @@ function prochaineOuverture(etat) {
 }
 
 // carte mise de côté (3 erreurs de suite au rang 1) : la plus ancienne d'abord ; ramener = elle redevient jouable tout de suite
-function prochaineLointaine(etat) {
+function prochaineLointaine(etat, garde = null) {
   let id = null, base = Infinity;
-  for (const [i, t] of Object.entries(etat.tuiles)) if (t.loin && !t.pause && t.base < base) { id = i; base = t.base; }
+  for (const [i, t] of Object.entries(etat.tuiles)) if (t.loin && !t.pause && t.base < base && (!garde || garde(i))) { id = i; base = t.base; }
   return id;
 }
 function ramener(etat, id, maintenant) {
@@ -215,7 +215,7 @@ function debloquee(etat, carte) {
   return carte.prerequis.every((g) => g.some((id) => rangDe(etat, id) >= SRS.DEBLOCAGE));
 }
 function prochaineNouvelle(etat, cartes) {
-  for (const phase of ["kanji", "combo", "mixte"]) {
+  for (const phase of ["kanji", "combo", "mixte", "ecriture"]) {
     let attente = 0, prete = null;
     for (const c of cartes) {
       if (c.phase !== phase || etat.tuiles[c.id]) continue;
@@ -229,8 +229,8 @@ function prochaineNouvelle(etat, cartes) {
 }
 
 // ---------- profil : réussite et temps par carte ----------
-// type de carte : ks (kanji -> sens), kl (kanji -> prononciation), ms (mot -> traduction), ml (mot -> kana)
-function typeCarte(id) { const p = id.split(":"); return p[0] + (p[2][0] === "s" ? "s" : "l"); }
+// type de carte : ks (kanji -> sens), kl (kanji -> prononciation), ms (mot -> traduction), ml (mot -> kana), me (sens + kana -> mot écrit en kanji)
+function typeCarte(id) { const p = id.split(":"); return p[0] + (p[2][0] === "s" ? "s" : p[2][0] === "e" ? "e" : "l"); }
 // réponses : [date, juste, secondes, type, rang avant la réponse (0 = nouvelle carte)]
 function enregistrerReponse(etat, juste, secondes, maintenant, type, rang) {
   const p = etat.profil;
@@ -317,7 +317,7 @@ function cartesDuJour(etat, maintenant) { return cartesParJour(etat)[cleJour(mai
 function couts(etat) {
   const taux = { 0: tauxReussite(etat) }, sec = {};
   for (let r = 1; r <= 10; r++) taux[r] = tauxParRang(etat, r);
-  for (const ty of ["ks", "kl", "ms", "ml"]) sec[ty] = secondesParType(etat, ty);
+  for (const ty of ["ks", "kl", "ms", "ml", "me"]) sec[ty] = secondesParType(etat, ty);
   return (id, rang) => (sec[typeCarte(id)] || sec.ks) * (2 - (taux[rang] !== undefined ? taux[rang] : taux[0]));
 }
 // travail que la prochaine carte devrait demander : sert à prévoir sur quelle carte l'objectif du jour sera atteint
@@ -385,7 +385,7 @@ function regler(etat, id, rang, maintenant) {
 }
 
 // ---------- projection : on rejoue les séances jour par jour avec le rythme réel de l'utilisateur ----------
-// opts : jours (365), minutes (temps par jour : le temps habituel de la personne), graine
+// opts : jours (365), minutes (temps par jour : le temps habituel de la personne), graine, mode ("lecture", "ecriture" ou "deux" par défaut : cartes jouées dans la projection)
 // retour : [[cartes au rang 5 et plus, cartes acquises, au rang 2 et plus, au rang 6 et plus, au rang 1 et plus, ..., au rang 11 et plus], ...]
 // pour aujourd'hui (indice 0) puis chaque jour ; cartes au rang k ou plus à l'indice 3 + k
 function projeter(etat, cartes, maintenant, opts = {}) {
@@ -398,21 +398,29 @@ function projeter(etat, cartes, maintenant, opts = {}) {
   for (const [id, t] of Object.entries(etat.tuiles)) { e.tuiles[id] = Object.assign({}, t); delete e.tuiles[id].loin; }
   const taux = {}, sec = {};
   for (let r = 1; r <= 10; r++) taux[r] = opts.taux !== undefined ? opts.taux : tauxParRang(etat, r);
-  for (const ty of ["ks", "kl", "ms", "ml"]) sec[ty] = opts.secondes || secondesParType(etat, ty);
+  for (const ty of ["ks", "kl", "ms", "ml", "me"]) sec[ty] = opts.secondes || secondesParType(etat, ty);
   // rang de départ des nouvelles cartes : comme les 100 dernières découvertes ; sinon ratée -> 1, réussie -> 2
   const departs = etat.journal.filter((x) => x[3] === 0).slice(-100).map((x) => x[4]);
   const tauxNouv = opts.taux !== undefined ? opts.taux : tauxReussite(etat);
   const depart = () => (departs.length >= 10 ? departs[Math.floor(alea() * departs.length)] : (alea() < tauxNouv ? 2 : 1));
-  const reste = { kanji: [], combo: [], mixte: [] };
+  const reste = { kanji: [], combo: [], mixte: [], ecriture: [] };
   for (const c of cartes) if (!e.tuiles[c.id]) reste[c.phase].push(c);
-  const nouvelle = () => {
-    for (const ph of ["kanji", "combo", "mixte"]) {
+  // comme dans l'appli : la lecture (kanji, mots) et l'écriture sont deux files séparées ; « deux » les alterne tant que les deux ont une carte débloquée
+  const mode = opts.mode || "deux", garde = (id) => mode === "deux" || (mode === "ecriture") === id.endsWith(":ecriture");
+  let alt = 0;
+  const dans = (phases) => {
+    for (const ph of phases) {
       const l = reste[ph];
       if (!l.length) continue;
       const i = l.findIndex((c) => debloquee(e, c));
-      return i < 0 ? null : l.splice(i, 1)[0];
+      return i < 0 ? null : { ph, i };
     }
     return null;
+  };
+  const nouvelle = () => {
+    const a = mode === "ecriture" ? null : dans(["kanji", "combo", "mixte"]), b = mode === "lecture" ? null : dans(["ecriture"]);
+    const r = a && b ? (alt++ % 2 ? b : a) : a || b;
+    return r ? reste[r.ph].splice(r.i, 1)[0] : null;
   };
   const ids = cartes.map((c) => c.id);
   const compter = () => { const o = objectifs(e, ids); return [o.r5, o.acquis, o.r2, o.r6, ...o.seuils.slice(1)]; };
@@ -421,7 +429,7 @@ function projeter(etat, cartes, maintenant, opts = {}) {
     const t = plusJours(maintenant, d) + 12 * H;
     appliquerRetards(e, t);
     let temps = 0;
-    for (const id of aJouer(e, t).dues) {
+    for (const id of aJouer(e, t).dues.filter(garde)) {
       const cout = sec[typeCarte(id)];
       if (temps + cout > budget) break;
       const tu = e.tuiles[id], juste = alea() < taux[tu.rang];
@@ -578,9 +586,55 @@ function qcmLectureMot(mot, tousMots, parKanji, alea = Math.random) {
   return { bonne, options: melanger([bonne, ...[...choix].slice(0, 3)], alea) };
 }
 
+// écriture d'un mot (sens + lecture donnés, on choisit le mot en kanji) : les pièges sont des mots où un kanji est remplacé par
+// un kanji qui se lit pareil (confusion classique), puis des mots existants qui partagent un kanji, puis des mots de même longueur.
+// Jamais un mot qui se lit comme le mot demandé (il pourrait être une réponse valable).
+function qcmEcriture(mot, tousMots, parKanji, alea = Math.random) {
+  const bonne = mot.mot;
+  const memeLecture = new Set(tousMots.filter((m) => m.kana === mot.kana || (mot.autresLectures || []).includes(m.kana) || (m.autresLectures || []).includes(mot.kana)).map((m) => m.mot));
+  memeLecture.add(bonne);
+  const existants = new Set(tousMots.map((m) => m.mot));
+  const lecturesDe = (k) => new Set(parKanji[k].lectures.map((l) => decoupe(l).rad).filter((r) => r));
+  const choix = new Set();
+  const ok = (c) => c && !memeLecture.has(c) && !choix.has(c);
+  // 1) même lecture, autre kanji (on garde les pièges qui ne sont pas des mots existants : pas d'ambiguïté possible)
+  const homophones = [];
+  for (const s of mot.seg) {
+    if (s[2] !== "k") continue;
+    for (const ch of s[0]) {
+      if (!parKanji[ch]) continue;
+      const mine = lecturesDe(ch);
+      for (const [k2] of Object.entries(parKanji)) {
+        if (k2 === ch) continue;
+        const l2 = lecturesDe(k2);
+        if ([...mine].some((r) => l2.has(r))) homophones.push([ch, k2]);
+      }
+    }
+  }
+  for (const [ch, k2] of melanger(homophones, alea)) {
+    if (choix.size >= 2) break;
+    const c = bonne.replace(ch, k2);
+    if (ok(c) && !existants.has(c)) choix.add(c);
+  }
+  // 2) mots existants qui partagent un kanji ou la même fin, de longueur proche
+  const kanjiDe = (m) => [...m.mot].filter((c) => parKanji[c]);
+  const mesKanji = new Set(kanjiDe(mot));
+  const proches = tousMots.filter((m) => ok(m.mot) && kanjiDe(m).some((c) => mesKanji.has(c)));
+  for (const m of melanger(proches, alea).sort((a, b) => Math.abs(a.mot.length - bonne.length) - Math.abs(b.mot.length - bonne.length))) {
+    if (choix.size >= 3) break;
+    if (ok(m.mot)) choix.add(m.mot);
+  }
+  // 3) repli : mots de même longueur
+  for (const m of melanger(tousMots, alea).sort((a, b) => Math.abs(a.mot.length - bonne.length) - Math.abs(b.mot.length - bonne.length))) {
+    if (choix.size >= 3) break;
+    if (ok(m.mot)) choix.add(m.mot);
+  }
+  return { bonne, options: melanger([bonne, ...[...choix].slice(0, 3)], alea) };
+}
+
 const SRSLib = { SRS, H, J, nomRang, cleJour, debutJour, plusJours, marges, fenetre, etatVide, migrer, rangDe, introduite, placer, repondre,
   repondreAcquis, appliquerRetards, aJouer, aAvancer, prochaineOuverture, pauser, reprendre, debloquee, prochaineNouvelle,
   typeCarte, enregistrerReponse, ajouterTemps, tempsJour, tauxReussite, tauxParRang, secondesParCarte, secondesParType, estimation, tempsActif,
   tendance, tempsTenu, tempsHabituel, cartesParJour, cartesDuJour, effortParJour, effortDuJour, coutCarte, calculerObjectif, objectifDuJour, prochaineLointaine, ramener, objectifs, ligneHistorique, regler, noterHistorique, projeter, melanger, decoupe, affichageLecture, reponseLecture, pieges, filtreSens,
-  qcmLecture, qcmSens, qcmSensMot, qcmLectureMot };
+  qcmLecture, qcmSens, qcmSensMot, qcmLectureMot, qcmEcriture };
 if (typeof window !== "undefined") window.SRSLib = SRSLib;
