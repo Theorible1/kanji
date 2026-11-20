@@ -38,8 +38,19 @@ function marges(rang, delai) {
 }
 // fenêtre d'une carte : ouvre (jouable à partir de), due (échéance), limite (à partir de là : descente d'un rang)
 // carte = { rang, base (ms de la dernière réponse ou de la descente), court, retard, delai (jours, cas particulier), pause }
+// v22 : le résultat est gardé par carte (WeakMap, rien n'est écrit dans la tuile enregistrée) tant que rang, base, court, retard et delai ne changent pas :
+// la projection à un an appelle fenetre des millions de fois (2 800 cartes x 365 jours) et plusJours crée des objets Date.
+const CACHE_FENETRE = new WeakMap();
 function fenetre(t) {
   if (t.rang >= SRS.ACQUIS) return null;
+  const cle = t.rang + "|" + t.base + "|" + (t.court ? 1 : 0) + "|" + (t.retard ? 1 : 0) + "|" + (t.delai || 0);
+  const c = CACHE_FENETRE.get(t);
+  if (c && c.cle === cle) return c.f;
+  const f = calculerFenetre(t);
+  CACHE_FENETRE.set(t, { cle, f });
+  return f;
+}
+function calculerFenetre(t) {
   if (t.court) { const o = t.base + SRS.COURT; return { ouvre: o, due: o, limite: Infinity }; }
   const delai = t.delai || SRS.DELAI[t.rang];
   const [av, ap] = marges(t.rang, delai);

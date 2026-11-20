@@ -383,3 +383,4 @@ select.regler { background: var(--page); color: var(--texte); border: 1px solid 
 .cle-g { font-size: 2rem; min-width: 2.4rem; text-align: center; }
 .cle-t { flex: 1; font-size: .92rem; } .cle-t small { opacity: .7; } .cle-k { opacity: .8; font-size: 1rem; }
 .cle-r { font-size: .72rem; opacity: .75; text-align: right; max-width: 7.5rem; }
+.fiche-mnemo { margin: 10px 0 4px; padding: 8px 10px; border-left: 3px solid var(--t-cle); border-radius: 6px; background: color-mix(in srgb, var(--t-cle) 10%, transparent); font-size: .92rem; line-height: 1.35; }

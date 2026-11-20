@@ -69,8 +69,8 @@
         { prerequis: c.pre ? c.pre.filter((g) => kanjiDans(g.kanji)).flatMap((g) => g.groupes) : [] }));
       if (avecCles) {
         // Un kanji attend que toutes ses clés soient au rang 5. Ses clés nouvelles forment un « paquet » placé juste avant lui.
-        // Pour ne pas recevoir toutes les clés d'un coup, un paquet n'arrive que quand les clés du paquet d'avant-avant sont au rang 3
-        // (2 kanji d'avance au plus). Une clé qui est elle-même un kanji (木, 日…) n'a pas de carte à part (pas de doublon) :
+        // Pour ne pas recevoir toutes les clés d'un coup, un paquet n'arrive que quand les clés du paquet situé 3 paquets avant sont au rang 3
+        // (3 kanji d'avance au plus, réglage de Quentin du 20/11/2026). Une clé qui est elle-même un kanji (木, 日…) n'a pas de carte à part (pas de doublon) :
         // c'est la carte de sens de ce kanji qui sert de clé (ou la carte de clé déjà apprise si le kanji sort du lot), et ce kanji passe avant.
         const parK = new Map(), deja = new Set(commences);
         for (const c of base) if (c.phase === "kanji") { const k = c.id.split(":")[1]; if (!parK.has(k)) parK.set(k, []); parK.get(k).push(c); }
@@ -80,7 +80,7 @@
           if (faits.has(k)) return;
           faits.add(k);
           const cles = PAR_KANJI[k].cles || [];
-          const avant = paquets.length >= 2 ? paquets[paquets.length - 2] : [], paquet = [];
+          const avant = paquets.length >= 3 ? paquets[paquets.length - 3] : [], paquet = [];
           for (const g of cles) {
             if (parK.has(g)) poser(g);
             else if (PAR_KANJI[g] && deja.has(g)) continue;   // clé-kanji hors du lot mais déjà commencé : pas de carte de clé en double
@@ -285,6 +285,7 @@
           ${lect}
           <div class="fiche-info">Kanji ${f.niveau} · ${f.traits} traits</div>
           ${f.cles && f.cles.length ? `<div class="fiche-info">Clés : <span class="jp">${f.cles.map((c) => `${esc(c)} ${esc(PAR_CLE[c].sens)}`).join(" · ")}</span></div>` : ""}</div></div>
+        ${f.mnemo ? `<div class="fiche-mnemo">💡 ${esc(f.mnemo)}</div>` : ""}
         <ul class="fiche-ex">${ex}</ul></div>`;
     }
     const m = x.mot;
@@ -1140,7 +1141,7 @@
         <ul class="regles">
           <li><b>Objectif N5 / N4</b> : coche les niveaux que tu travailles (au moins un). Les nouvelles cartes, la progression et l'onglet Progrès suivent ton choix. Si tu le changes, au prochain Jouer l'appli te demande si tu gardes ou retires les cartes commencées qui n'en font plus partie. Un mot qui contient un kanji N4 est un mot N4. En N4 seul, les kanji N5 utilisés par des mots N4 sont ajoutés à tes cartes, pour qu'aucun mot ne reste bloqué.</li>
           <li><b>Mode écriture</b> (désactivé au départ) : une carte de plus par mot, « Comment s'écrit ce mot ? ». On voit le sens et la lecture et on choisit le mot en kanji parmi 4. Les pièges sont des mots où un kanji est remplacé par un kanji qui se lit pareil, ou des mots proches. Ordre : les mots à un seul kanji d'abord, puis deux kanji, puis trois et quatre. Une carte d'écriture arrive quand les cartes sens et lecture du même mot sont au rang 5. Une fois coché, un menu sous le bouton Jouer choisit Lecture, Écriture ou Les deux. Les objectifs et les courbes comptent alors aussi les cartes d'écriture.</li>
-          <li><b>Apprendre les clés d'abord</b> (désactivé au départ) : les clés sont les morceaux qui composent les kanji (氵 eau, 亻 personne…). Une carte par clé : tu vois la clé et tu choisis son sens. Les clés arrivent par petits paquets, juste avant le kanji qui les contient, avec 2 kanji d'avance au plus (le paquet suivant attend que les clés d'avant soient au rang 3). Un nouveau kanji n'est proposé que quand toutes ses clés sont au rang 5. Une clé monte de 2 rangs par bonne réponse et descend de 1 par erreur. Les kanji déjà commencés (au moins une carte vue) ne sont jamais bloqués par leurs clés. Une clé qui est déjà un kanji de ta liste (木, 日…) n'a pas de carte à part : le kanji passe avant, et il faut qu'il soit au rang 5. Les kanji d'un seul bloc (日, 人…) n'ont pas de clé. Décoché, les clés commencées sont mises en pause. Le « Dictionnaire des clés » liste toutes les clés et leurs kanji.</li>
+          <li><b>Apprendre les clés d'abord</b> (désactivé au départ) : les clés sont les morceaux qui composent les kanji (氵 eau, 亻 personne…). Une carte par clé : tu vois la clé et tu choisis son sens. Les clés arrivent par petits paquets, juste avant le kanji qui les contient, avec 3 kanji d'avance au plus (un paquet attend que les clés des trois paquets précédents soient au rang 3). Un nouveau kanji n'est proposé que quand toutes ses clés sont au rang 5. Une clé monte de 2 rangs par bonne réponse et descend de 1 par erreur. Les kanji déjà commencés (au moins une carte vue) ne sont jamais bloqués par leurs clés. Une clé qui est déjà un kanji de ta liste (木, 日…) n'a pas de carte à part : le kanji passe avant, et il faut qu'il soit au rang 5. Les kanji d'un seul bloc (日, 人…) n'ont pas de clé. Décoché, les clés commencées sont mises en pause. Le « Dictionnaire des clés » liste toutes les clés et leurs kanji.</li>
           <li><b>Montée et descente des rangs</b> : bonne réponse, une clé monte de 2 rangs, un kanji ou un mot de 1. Erreur, une clé et un kanji descendent de 1 rang, un mot de 2. Carte pas revue à temps : toujours 1 rang de moins à la fois. Quand elle revient après cette inactivité, c'est un « test de retour » : réussi, la carte remonte directement au rang d'avant la descente (sans monter plus haut) ; raté, elle garde le rang où l'inactivité l'avait amenée.</li>
           <li><b>Thème</b> : les 40 thèmes de THEMATOR3000. Le changement est immédiat.</li>
           <li><b>Mes stats</b> : bonnes réponses sur tes 200 dernières cartes revues (50 % au départ, tant qu'il y a moins de 30 réponses) ; secondes par carte ; temps tenu par jour (moyenne des 7 derniers jours, après 7 jours d'utilisation) ; jours joués d'affilée ; temps total passé ; cartes déjà vues. Temps par type de carte : moyenne des 50 dernières cartes de ce type. Réussite par rang : tes 60 dernières réponses à ce rang. Tendance : tes dernières réponses comparées aux précédentes (à partir de 40 réponses).</li>
@@ -1150,7 +1151,7 @@
       </details>
       <details class="panneau">
         <summary>Sources</summary>
-        <p class="aide">Kanji, lectures : KANJIDIC2 (EDRDG, licence CC BY-SA 4.0). Clés (composants des kanji) : KRADFILE (Michael Raine, James Breen et EDRDG, licence EDRDG), choisis et nommés en français pour l'appli. Listes N5/N4 : tanos.co.uk (J. Waller, CC BY) et ebooks Kanpai. Listes non officielles (pas de liste officielle depuis 2010).</p>
+        <p class="aide">Kanji, lectures : KANJIDIC2 (EDRDG, licence CC BY-SA 4.0). Clés (composants des kanji) : KRADFILE (Michael Raine, James Breen et EDRDG, licence EDRDG), choisis pour l'appli ; noms français d'après Wikipédia (« Liste des radicaux de Kangxi », CC BY-SA). Listes N5/N4 : tanos.co.uk (J. Waller, CC BY) et ebooks Kanpai. Listes non officielles (pas de liste officielle depuis 2010).</p>
       </details>
       <details class="panneau vraiment">
         <summary>VRAIMENT !?</summary>
