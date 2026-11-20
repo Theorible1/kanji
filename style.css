@@ -375,3 +375,11 @@ select.regler { background: var(--page); color: var(--texte); border: 1px solid 
 .q-fr { text-align: center; font-size: 1.6rem; font-weight: 600; margin: 22px 0 2px; line-height: 1.3; color: var(--texte); }
 .mode-jeu { display: flex; align-items: center; justify-content: center; gap: 10px; margin: 10px 0 0; font-size: .85rem; color: var(--texte-2); }
 .mode-jeu select { font: inherit; font-family: var(--mono); padding: 8px 10px; border-radius: 8px; background: var(--page); color: var(--texte); border: 1px solid var(--bord-fort); min-height: 40px; }
+/* v21 : clés (composants des kanji) */
+:root { --t-cle: #6fc7c0; }
+.badge.cle { --c: var(--t-cle); }
+.cles { list-style: none; margin: 0 0 12px; padding: 0; }
+.cle-ligne { display: flex; gap: 12px; align-items: center; padding: 8px 0; border-bottom: 1px solid var(--bord); }
+.cle-g { font-size: 2rem; min-width: 2.4rem; text-align: center; }
+.cle-t { flex: 1; font-size: .92rem; } .cle-t small { opacity: .7; } .cle-k { opacity: .8; font-size: 1rem; }
+.cle-r { font-size: .72rem; opacity: .75; text-align: right; max-width: 7.5rem; }

@@ -4,7 +4,9 @@
 (() => {
   const L = window.SRSLib, S = L.SRS;
   const FICHES = window.KANJI, MOTS = window.MOTS;
-  const PAR_KANJI = Object.fromEntries(FICHES.map((f) => [f.kanji, f]));
+  const CLES = window.CLES || [];                          // v21 : les clés (composants) des kanji
+  const PAR_CLE = Object.fromEntries(CLES.map((c) => [c.cle, c]));
+  const PAR_KANJI =Object.fromEntries(FICHES.map((f) => [f.kanji, f]));
   const PAR_MOT = Object.fromEntries(MOTS.map((m) => [m.mot, m]));
   const CLE = "kanjiApp.v1";
   const maintenant = () => Date.now() + (window.__decalage || 0);   // __decalage : tests seulement
@@ -46,6 +48,9 @@
   const IDS_ECR = CARTES_ECR.map((c) => c.id);
   for (const c of CARTES) if (c.pre) c.prerequis = c.pre.flatMap((g) => g.groupes);
   const IDS = CARTES.map((c) => c.id);
+  // clés (v21, option « Apprendre les clés d'abord ») : une carte « clé -> sens » par clé, jouée avant les kanji qui la contiennent
+  const CARTE_CLE = Object.fromEntries(CLES.map((c) => [c.cle, { id: `c:${c.cle}:s0`, phase: "cle", niveau: "", prerequis: [] }]));
+  const IDS_CLES = CLES.map((c) => `c:${c.cle}:s0`);
   // ce qu'on travaille (Paramètres, cases N5 et N4) : "N5", "N4" ou "N5N4".
   // Un mot qui mélange kanji N5 et N4 est un mot N4. En N4 seul, un mot N4 n'est jamais bloqué par un kanji N5 :
   // les kanji N5 utilisés par des mots N4 entrent dans le lot (leurs cartes sont jouées avec le N4), pas le reste du N5.
@@ -54,12 +59,40 @@
   const actifs = {};
   function cartesActives() {
     const ch = (etat && CHOIX_NIVEAUX[etat.reglages.niveaux]) ? etat.reglages.niveaux : "N5N4";
-    const ecr = !!(etat && etat.reglages.ecriture), cle = ch + (ecr ? "+E" : "");
+    const ecr = !!(etat && etat.reglages.ecriture), avecCles = !!(etat && etat.reglages.cles);
+    // kanji déjà commencés (au moins une de leurs cartes vue) : leurs clés ne les bloquent pas. Leur liste entre dans la clé du cache.
+    const commences = avecCles ? FICHES.filter((f) => PROPRES[f.kanji].some((id) => etat.tuiles[id])).map((f) => f.kanji) : [];
+    const cle = ch + (ecr ? "+E" : "") + (avecCles ? "+C" + commences.join("") : "");
     if (!actifs[cle]) {
       const kanjiDans = (k) => ch.includes(PAR_KANJI[k].niveau) || (ch === "N4" && N5_DU_N4.has(k));
-      const cartes = [...CARTES.filter((c) => (c.phase === "kanji" ? kanjiDans(c.id.split(":")[1]) : ch.includes(c.niveau))).map((c) => Object.assign({}, c,
-        { prerequis: c.pre ? c.pre.filter((g) => kanjiDans(g.kanji)).flatMap((g) => g.groupes) : [] })),
-        ...(ecr ? CARTES_ECR.filter((c) => ch.includes(c.niveau)) : [])];
+      let base = CARTES.filter((c) => (c.phase === "kanji" ? kanjiDans(c.id.split(":")[1]) : ch.includes(c.niveau))).map((c) => Object.assign({}, c,
+        { prerequis: c.pre ? c.pre.filter((g) => kanjiDans(g.kanji)).flatMap((g) => g.groupes) : [] }));
+      if (avecCles) {
+        // Un kanji attend que toutes ses clés soient au rang 5. Ses clés nouvelles forment un « paquet » placé juste avant lui.
+        // Pour ne pas recevoir toutes les clés d'un coup, un paquet n'arrive que quand les clés du paquet d'avant-avant sont au rang 3
+        // (2 kanji d'avance au plus). Une clé qui est elle-même un kanji (木, 日…) n'a pas de carte à part (pas de doublon) :
+        // c'est la carte de sens de ce kanji qui sert de clé (ou la carte de clé déjà apprise si le kanji sort du lot), et ce kanji passe avant.
+        const parK = new Map(), deja = new Set(commences);
+        for (const c of base) if (c.phase === "kanji") { const k = c.id.split(":")[1]; if (!parK.has(k)) parK.set(k, []); parK.get(k).push(c); }
+        const vues = new Set(), faits = new Set(), mele = [], paquets = [];
+        const groupeCle = (g) => (PAR_KANJI[g] ? (parK.has(g) ? [idsSens(g)[0], CARTE_CLE[g].id] : [CARTE_CLE[g].id, idsSens(g)[0]]) : [CARTE_CLE[g].id]);
+        const poser = (k) => {
+          if (faits.has(k)) return;
+          faits.add(k);
+          const cles = PAR_KANJI[k].cles || [];
+          const avant = paquets.length >= 2 ? paquets[paquets.length - 2] : [], paquet = [];
+          for (const g of cles) {
+            if (parK.has(g)) poser(g);
+            else if (PAR_KANJI[g] && deja.has(g)) continue;   // clé-kanji hors du lot mais déjà commencé : pas de carte de clé en double
+            else if (!vues.has(g)) { vues.add(g); paquet.push(CARTE_CLE[g].id); mele.push(Object.assign({}, CARTE_CLE[g], { prerequis: avant.map((id) => [id]), seuil: 3 })); }
+          }
+          if (paquet.length) paquets.push(paquet);
+          for (const c of parK.get(k)) mele.push(Object.assign({}, c, { prerequis: deja.has(k) ? [] : cles.map(groupeCle) }));
+        };
+        for (const c of base) { if (c.phase !== "kanji") mele.push(c); else poser(c.id.split(":")[1]); }
+        base = mele;
+      }
+      const cartes = [...base, ...(ecr ? CARTES_ECR.filter((c) => ch.includes(c.niveau)) : [])];
       const kanji = FICHES.filter((f) => kanjiDans(f.kanji));
       actifs[cle] = { choix: ch, cartes, ids: cartes.map((c) => c.id), kanji, mots: MOTS.filter((m) => ch.includes(m.niveau)).length };
     }
@@ -67,6 +100,7 @@
   }
   function info(id) {
     const p = id.split(":");
+    if (p[0] === "c") return { genre: "c", type: "sens", cle: p[1], def: PAR_CLE[p[1]] };
     if (p[0] === "m") return { genre: "m", type: p[2], mot: PAR_MOT[p[1]], cle: p[1] };
     const fiche = PAR_KANJI[p[1]];
     if (p[2][0] === "s") return { genre: "k", type: "sens", fiche, cle: p[1], idx: +p[2].slice(1) };
@@ -160,6 +194,7 @@
   const LECTURES_MOTS = new Set(MOTS.map((m) => m.jl).filter(Boolean));
   function typeCarte(id) {
     const x = info(id);
+    if (x.genre === "c") return { cl: "cle", nom: "Clé · sens", court: "clé" };
     if (x.genre === "m" && x.type === "ecriture") return { cl: "ecr", nom: "Vocabulaire · écriture", court: "vocabulaire · écriture" };
     if (x.genre === "m") return { cl: "voc", nom: `Vocabulaire · ${x.type === "sens" ? "sens" : "lecture"}`, court: `vocabulaire · ${x.type === "sens" ? "sens" : "lecture"}` };
     if (x.type === "sens") return { cl: "sens", nom: "Kanji · sens général", court: "sens général" };
@@ -226,6 +261,16 @@
   function ficheHTML(id, neutre) {
     const x = info(id);
     if (neutre) x.type = "";
+    if (x.genre === "c") {
+      // clé : le dessin, son sens, les kanji de ton lot qui la contiennent
+      const d = x.def, dans = new Set(cartesActives().kanji.map((f) => f.kanji));
+      const kj = d.kanji.filter((k) => dans.has(k) || !dans.size).map((k) => `<li><span class="jp">${esc(k)}</span> <span class="fr">${esc(PAR_KANJI[k].sens)}</span></li>`).join("");
+      return `<div class="fiche">
+        <div class="fiche-ligne">${badge({ cl: "cle", court: "clé" }, true)}</div>
+        <div class="fiche-tete"><span class="fiche-k jp">${esc(d.cle)}</span>
+          <div><div class="fiche-sens fort">${esc(maj(d.sens))}</div>${d.note ? `<div class="fiche-info">${esc(maj(d.note))}</div>` : ""}</div></div>
+        ${kj ? `<div class="fiche-info">Se trouve dans :</div><ul class="fiche-ex">${kj}</ul>` : ""}</div>`;
+    }
     if (x.genre === "k") {
       const f = x.fiche;
       const ex = f.exemples.map((e) => `<li class="${x.type === "lecture" && exempleUtilise(f.kanji, x.lecture, e) ? "fort" : ""}"><span class="jp">${esc(e.mot)}</span> <span class="kana">${esc(e.kana)}</span>${son(e.kana)} <span class="fr">${esc(e.fr)}</span></li>`).join("");
@@ -238,7 +283,8 @@
         <div class="fiche-tete"><span class="fiche-k jp">${esc(f.kanji)}</span>${etoile(f.niveau)}
           <div><div class="fiche-sens">${sens}</div>
           ${lect}
-          <div class="fiche-info">Kanji ${f.niveau} · ${f.traits} traits</div></div></div>
+          <div class="fiche-info">Kanji ${f.niveau} · ${f.traits} traits</div>
+          ${f.cles && f.cles.length ? `<div class="fiche-info">Clés : <span class="jp">${f.cles.map((c) => `${esc(c)} ${esc(PAR_CLE[c].sens)}`).join(" · ")}</span></div>` : ""}</div></div>
         <ul class="fiche-ex">${ex}</ul></div>`;
     }
     const m = x.mot;
@@ -305,7 +351,11 @@
     const x = info(id);
     let g, visuel, consigne;
     const grand = (txt, html) => { const lg = [...txt].length; return `<div class="q-mot jp" style="font-size:${Math.min(76, Math.floor(320 / Math.max(lg, 2)))}px">${html}</div>`; };
-    if (x.genre === "k" && x.type === "sens") {
+    if (x.genre === "c") {
+      g = L.qcmCle(x.def, CLES);
+      visuel = `<div class="q-kanji jp">${esc(x.def.cle)}</div>`;
+      consigne = "Que signifie cette clé ?";
+    } else if (x.genre === "k" && x.type === "sens") {
       g = L.qcmSens(x.fiche, x.idx, FICHES);
       visuel = `<div class="q-kanji jp">${esc(x.fiche.kanji)}</div>`;
       consigne = "Que signifie ce kanji ?" + (x.fiche.sensCartes.length > 1 ? ` (un de ses ${x.fiche.sensCartes.length} sens)` : "");
@@ -533,7 +583,7 @@
     };
     const reviser = (id, avance) => {
       const avant = etat.tuiles[id].rang;
-      poser(id, { jeu: true, bonus: session.bonus, reste: session.reste, chrono: S.CHRONO[avant] || null, titre: `${avance ? "En avance · " : ""}${L.nomRang(avant)}` }, (res) => {
+      poser(id, { jeu: true, bonus: session.bonus, reste: session.reste, chrono: S.CHRONO[avant] || null, titre: `${avance ? "En avance · " : ""}${etat.tuiles[id].haut ? "Test de retour · " : ""}${L.nomRang(avant)}` }, (res) => {
         const juste = res === "juste";
         compter(id, juste, avant);
         const apres = L.repondre(etat, id, juste, maintenant());
@@ -603,6 +653,7 @@
       if (!session.bonus && cartesDuJour() > 0 && butDuJour() > 0 && !jourFini()) atteindre();
       const prochaine = L.prochaineOuverture(etat, garde);
       const msg = pr.phase === "fini" ? "Toutes les cartes ont été vues. Bravo !"
+        : pr.phase === "kanji" && etat.reglages.cles ? `Les prochains kanji se débloquent quand leurs clés sont au rang 5 (${pr.attente} carte(s) en attente).`
         : pr.phase === "ecriture" ? `Les prochaines cartes d'écriture se débloquent quand le sens et la lecture du mot sont au rang 5 (${pr.attente} carte(s) en attente).`
         : `Les prochains mots se débloquent quand les cartes de leurs kanji sont au rang 5 (${pr.attente} carte(s) en attente).`;
       ecran.innerHTML = `<div class="retour ok">Plus rien à faire pour l'instant</div>
@@ -661,7 +712,7 @@
   const REPERES = [[30, "1 mois"], [182, "6 mois"], [365, "1 an"]];
   let projection = null;                     // { cle, points } : recalculée quand le jour ou la progression change
   let reglagesMain = 0;                       // cartes réglées à la main (Progrès) : la projection est refaite
-  const cleProjection = () => `${L.cleJour(maintenant())}|${etat.journal.length}|${cartesActives().choix}|${reglagesMain}|${etat.reglages.ecriture ? 1 : 0}|${modeJeu()}`;
+  const cleProjection = () => `${L.cleJour(maintenant())}|${etat.journal.length}|${cartesActives().choix}|${reglagesMain}|${etat.reglages.ecriture ? 1 : 0}|${etat.reglages.cles ? 1 : 0}|${modeJeu()}`;
   const assezDeDonnees = () => etat.profil.reponses.length >= 20;
   // valeur d'un objectif dans une ligne d'historique (seuils par rang depuis la v14 ; avant, seulement les 4 objectifs nommés)
   const valeurH = (v, s) => (v.length >= 16 ? v[4 + s] : { 5: v[0], 11: v[1], 2: v[3], 6: v[4] }[s]);
@@ -839,7 +890,7 @@
   // ---------- Acquis ----------
   function vueAcquis() {
     onglets("acquis");
-    const ids = [...IDS, ...(etat.reglages.ecriture ? IDS_ECR : [])].filter((id) => L.rangDe(etat, id) === S.ACQUIS);
+    const ids = [...IDS, ...(etat.reglages.ecriture ? IDS_ECR : []), ...(etat.reglages.cles ? IDS_CLES : [])].filter((id) => L.rangDe(etat, id) === S.ACQUIS);
     ecran.innerHTML = `<h1>Acquis</h1>
       <p class="info">${ids.length} carte${ids.length > 1 ? "s" : ""} acquise${ids.length > 1 ? "s" : ""}.</p>
       ${ids.length ? `<button class="gros" id="b-acq">S'entraîner (${Math.min(20, ids.length)} questions)</button>` : ""}`;
@@ -888,7 +939,7 @@
     const familles = [["Kanji N5", (c) => c.phase === "kanji" && niveauK(c) === "N5"],
       ["Kanji N4", (c) => c.phase === "kanji" && niveauK(c) === "N4"],
       ["Vocabulaire niveau 1", (c) => c.phase === "combo"], ["Vocabulaire niveau 2", (c) => c.phase === "mixte"],
-      ["Écriture (mots en kanji)", (c) => c.phase === "ecriture"]];
+      ["Écriture (mots en kanji)", (c) => c.phase === "ecriture"], ["Clés", (c) => c.phase === "cle"]];
     const barres = familles.map(([nom, fn]) => {
       const ids = act.cartes.filter(fn).map((c) => c.id);
       if (!ids.length) return "";
@@ -906,6 +957,24 @@
       <div class="legende-g">${MAITRISES.map(([n, c]) => `<span class="${c}">${n}</span>`).join("")}</div>
       <div class="grille">${kanjis.map((f) => `<button class="case ${couleurMaitrise(maitrise(f.kanji))} jp" data-k="${esc(f.kanji)}">${esc(f.kanji)}</button>`).join("")}</div>`;
     document.querySelectorAll(".case").forEach((b) => b.onclick = () => ficheKanji(b.dataset.k));
+  }
+  // dictionnaire des clés (v21) : toutes les clés, leur sens, les kanji qui les contiennent ; le rang n'apparaît que pour les clés déjà commencées
+  function vueCles() {
+    onglets("options");
+    const act = cartesActives(), dans = new Set(act.kanji.map((f) => f.kanji));
+    const lignes = CLES.map((c) => ({ c, kj: c.kanji.filter((k) => dans.has(k)) })).filter((x) => x.kj.length || !dans.size)
+      .map(({ c, kj }) => {
+        const id = dans.has(c.cle) ? `k:${c.cle}:s0` : `c:${c.cle}:s0`;   // une clé qui est un kanji de ton lot n'a pas de carte à part : c'est la carte du kanji
+        return `<li class="cle-ligne"><span class="jp cle-g">${esc(c.cle)}</span>
+          <span class="cle-t"><b>${esc(maj(c.sens))}</b>${dans.has(c.cle) ? " <small>aussi un kanji</small>" : ""}${c.note ? ` <small>${esc(c.note)}</small>` : ""}<br><span class="jp cle-k">${kj.map(esc).join(" ")}</span></span>
+          <span class="cle-r">${L.introduite(etat, id) ? etatCarte(id) : ""}</span></li>`;
+      }).join("");
+    ecran.innerHTML = `<h1>Dictionnaire des clés</h1>
+      <p class="info">${CLES.length} clés, dans l'ordre où elles arrivent. Les clés viennent de KRADFILE (EDRDG) ; les noms français sont ceux de l'appli.</p>
+      <ul class="cles">${lignes}</ul>
+      <button class="gros" id="b-r">Retour</button>`;
+    $("#b-r").onclick = vueOptions;
+    scrollTo(0, 0);
   }
   // page d'un kanji : maîtrise, rang de chaque carte ; « Modifier les cartes » permet de régler chaque carte à la main
   const NOMS_REGLAGE = ["Jamais vue", ...Array.from({ length: 10 }, (_, i) => `Rang ${i + 1}`), "Acquis"];
@@ -983,6 +1052,11 @@
         <h2>Mode écriture</h2>
         <label class="seg niv ${etat.reglages.ecriture ? "actif" : ""}"><input type="checkbox" id="c-ecr" ${etat.reglages.ecriture ? "checked" : ""}><b>Activer</b><span>${CARTES_ECR.filter((c) => ch.includes(c.niveau)).length} mots à écrire en kanji</span></label>
       </section>
+      <section class="panneau">
+        <h2>Apprendre les clés d'abord</h2>
+        <label class="seg niv ${etat.reglages.cles ? "actif" : ""}"><input type="checkbox" id="c-cles" ${etat.reglages.cles ? "checked" : ""}><b>Activer</b><span>${(() => { const lot = new Set(act.kanji.map((f) => f.kanji)); return new Set(act.kanji.flatMap((f) => f.cles || []).filter((g) => !lot.has(g))).size; })()} clés à apprendre avant les kanji</span></label>
+        <button class="second" id="b-dico">Dictionnaire des clés</button>
+      </section>
       <details class="panneau" id="d-theme">
         <summary>Thème</summary>
         ${FAMILLES_THEMES.map(([fam, ts]) => `<div class="th-fam">${fam}</div><div class="th-grille">${ts.map(([k, nom]) => {
@@ -1001,7 +1075,8 @@
           <div class="stat"><b>${vues}</b><span>cartes vues</span></div>
         </div>
         <div class="th-fam st-titre">Temps par type de carte</div>
-        <div class="tuiles-stat t4">${[["ks", "kanji sens"], ["kl", "kanji lecture"], ["ms", "mot sens"], ["ml", "mot lecture"], ...(etat.reglages.ecriture || etat.profil.reponses.some((x) => x[3] === "me") ? [["me", "mot écriture"]] : [])].map(([ty, nom]) =>
+        <div class="tuiles-stat t4">${[["ks", "kanji sens"], ["kl", "kanji lecture"], ["ms", "mot sens"], ["ml", "mot lecture"], ...(etat.reglages.ecriture || etat.profil.reponses.some((x) => x[3] === "me") ? [["me", "mot écriture"]] : []),
+          ...(etat.reglages.cles || etat.profil.reponses.some((x) => x[3] === "cs") ? [["cs", "clé sens"]] : [])].map(([ty, nom]) =>
           `<div class="stat"><b>${etat.profil.reponses.some((x) => x[3] === ty) ? Math.round(L.secondesParType(etat, ty)) + " s" : "–"}</b><span>${nom}</span></div>`).join("")}</div>
         <div class="th-fam st-titre">Réussite par rang</div>
         <div class="tuiles-stat t5">${[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((r) =>
@@ -1045,9 +1120,9 @@
           <li><b>Encouragements</b> : un éclair sur les côtés à chaque bonne réponse, une petite explosion toutes les 5 bonnes réponses d'affilée, quand une carte passe « en feu » (rang 6) et quand elle est acquise.</li>
           <li><b>Erreur de doigt</b> : sous « Continuer », le bouton « J'ai missclick, déso bro » compte ta réponse comme juste.</li>
           <li><b>Rangs</b> : chaque carte a un rang de 1 à 10, puis Acquis. Délai avant de la revoir : rangs 1 et 2 : 1 jour, rang 3 : 2 jours, rang 4 : 3 jours, rang 5 : 1 semaine, rang 6 : 2 semaines, rang 7 : 1 mois, rangs 8 et 9 : 80 jours, rang 10 : 1 mois. Les rangs 9 et 10 sont chronométrés (30 s puis 12 s).</li>
-          <li><b>Réponse</b> : juste = +1 rang, erreur = -1 rang. Une carte ratée qui se retrouve au rang 1 revient 3 h plus tard. Dans la séance, une carte ratée repasse 3 cartes plus tard, sans effet sur son rang.</li>
+          <li><b>Réponse</b> : juste = un kanji ou un mot monte de 1 rang, une clé de 2 ; erreur = une clé ou un kanji descend de 1 rang, un mot de 2 (détail dans Options, « Montée et descente des rangs »). Une carte ratée qui se retrouve au rang 1 revient 3 h plus tard. Dans la séance, une carte ratée repasse 3 cartes plus tard, sans effet sur son rang.</li>
           <li><b>Nouvelle carte</b> : ratée, elle entre au rang 1. Réussie, ta note la place : très peu = rang 1, un peu = 2, moyen = 5, bien = 7, très bien = 8. Si tu quittes avant de la noter, elle n'est pas comptée : elle reviendra comme une nouvelle carte.</li>
-          <li><b>Retard</b> : une carte a quelques jours de marge pour être revue (1 jour aux rangs 1 à 4, 7 à 16 jours ensuite). Passé ce délai, elle descend d'un rang, sans que ce soit compté comme une erreur.</li>
+          <li><b>Retard</b> : une carte a quelques jours de marge pour être revue (1 jour aux rangs 1 à 4, 7 à 16 jours ensuite). Passé ce délai, elle descend d'un rang, sans que ce soit compté comme une erreur. Quand elle revient, c'est un « test de retour » : réussi, elle remonte d'un coup à son rang d'avant ; raté, elle garde son rang.</li>
           <li><b>Ordre des nouvelles cartes</b> : les kanji seuls, puis le vocabulaire niveau 1 (tous les kanji du mot sont à connaître), puis le niveau 2 (furigana sur les kanji hors liste), les mots les plus courts d'abord. Un mot arrive quand, pour chacun de ses kanji, le sens et la prononciation utilisée dans le mot sont au rang 5.</li>
           <li><b>Temps</b> : plus d'une minute sur une carte ne compte pas (téléphone posé).</li>
         </ul>
@@ -1065,6 +1140,8 @@
         <ul class="regles">
           <li><b>Objectif N5 / N4</b> : coche les niveaux que tu travailles (au moins un). Les nouvelles cartes, la progression et l'onglet Progrès suivent ton choix. Si tu le changes, au prochain Jouer l'appli te demande si tu gardes ou retires les cartes commencées qui n'en font plus partie. Un mot qui contient un kanji N4 est un mot N4. En N4 seul, les kanji N5 utilisés par des mots N4 sont ajoutés à tes cartes, pour qu'aucun mot ne reste bloqué.</li>
           <li><b>Mode écriture</b> (désactivé au départ) : une carte de plus par mot, « Comment s'écrit ce mot ? ». On voit le sens et la lecture et on choisit le mot en kanji parmi 4. Les pièges sont des mots où un kanji est remplacé par un kanji qui se lit pareil, ou des mots proches. Ordre : les mots à un seul kanji d'abord, puis deux kanji, puis trois et quatre. Une carte d'écriture arrive quand les cartes sens et lecture du même mot sont au rang 5. Une fois coché, un menu sous le bouton Jouer choisit Lecture, Écriture ou Les deux. Les objectifs et les courbes comptent alors aussi les cartes d'écriture.</li>
+          <li><b>Apprendre les clés d'abord</b> (désactivé au départ) : les clés sont les morceaux qui composent les kanji (氵 eau, 亻 personne…). Une carte par clé : tu vois la clé et tu choisis son sens. Les clés arrivent par petits paquets, juste avant le kanji qui les contient, avec 2 kanji d'avance au plus (le paquet suivant attend que les clés d'avant soient au rang 3). Un nouveau kanji n'est proposé que quand toutes ses clés sont au rang 5. Une clé monte de 2 rangs par bonne réponse et descend de 1 par erreur. Les kanji déjà commencés (au moins une carte vue) ne sont jamais bloqués par leurs clés. Une clé qui est déjà un kanji de ta liste (木, 日…) n'a pas de carte à part : le kanji passe avant, et il faut qu'il soit au rang 5. Les kanji d'un seul bloc (日, 人…) n'ont pas de clé. Décoché, les clés commencées sont mises en pause. Le « Dictionnaire des clés » liste toutes les clés et leurs kanji.</li>
+          <li><b>Montée et descente des rangs</b> : bonne réponse, une clé monte de 2 rangs, un kanji ou un mot de 1. Erreur, une clé et un kanji descendent de 1 rang, un mot de 2. Carte pas revue à temps : toujours 1 rang de moins à la fois. Quand elle revient après cette inactivité, c'est un « test de retour » : réussi, la carte remonte directement au rang d'avant la descente (sans monter plus haut) ; raté, elle garde le rang où l'inactivité l'avait amenée.</li>
           <li><b>Thème</b> : les 40 thèmes de THEMATOR3000. Le changement est immédiat.</li>
           <li><b>Mes stats</b> : bonnes réponses sur tes 200 dernières cartes revues (50 % au départ, tant qu'il y a moins de 30 réponses) ; secondes par carte ; temps tenu par jour (moyenne des 7 derniers jours, après 7 jours d'utilisation) ; jours joués d'affilée ; temps total passé ; cartes déjà vues. Temps par type de carte : moyenne des 50 dernières cartes de ce type. Réussite par rang : tes 60 dernières réponses à ce rang. Tendance : tes dernières réponses comparées aux précédentes (à partir de 40 réponses).</li>
           <li><b>Mise à jour</b> : l'appli vérifie toute seule à chaque ouverture et te prévient quand une nouvelle version est prête.</li>
@@ -1073,7 +1150,7 @@
       </details>
       <details class="panneau">
         <summary>Sources</summary>
-        <p class="aide">Kanji, lectures : KANJIDIC2 (EDRDG, licence CC BY-SA 4.0). Listes N5/N4 : tanos.co.uk (J. Waller, CC BY) et ebooks Kanpai. Listes non officielles (pas de liste officielle depuis 2010).</p>
+        <p class="aide">Kanji, lectures : KANJIDIC2 (EDRDG, licence CC BY-SA 4.0). Clés (composants des kanji) : KRADFILE (Michael Raine, James Breen et EDRDG, licence EDRDG), choisis et nommés en français pour l'appli. Listes N5/N4 : tanos.co.uk (J. Waller, CC BY) et ebooks Kanpai. Listes non officielles (pas de liste officielle depuis 2010).</p>
       </details>
       <details class="panneau vraiment">
         <summary>VRAIMENT !?</summary>
@@ -1097,6 +1174,16 @@
       projection = null; sauver();
       alerte(e.target.checked ? "Mode écriture activé : un menu apparaît sous Jouer." : "Mode écriture désactivé."); vueOptions();
     };
+    $("#c-cles").onchange = (e) => {
+      etat.reglages.cles = e.target.checked;
+      // décochée : les cartes de clés commencées sont mises en pause (elles ne descendent pas de rang) ; recochée : elles reprennent là où elles en étaient.
+      // Les kanji déjà commencés ne sont pas touchés.
+      if (e.target.checked) L.reprendre(etat, cartesActives().ids, maintenant());
+      else L.pauser(etat, IDS_CLES, maintenant());
+      projection = null; sauver();
+      alerte(e.target.checked ? "Clés activées : chaque kanji attend ses clés." : "Clés désactivées."); vueOptions();
+    };
+    $("#b-dico").onclick = vueCles;
     if ($("#b-inst")) $("#b-inst").onclick = () => {
       if (!invitation) { $("#p-inst").innerHTML = aideInstallation(); alerte("Suis les étapes juste en dessous."); return; }
       invitation.prompt();
@@ -1154,7 +1241,7 @@
   // ---------- navigation ----------
   const VUES = { accueil, progres: vueProgres, acquis: vueAcquis, options: vueOptions };
   document.querySelectorAll("nav button").forEach((b) => b.onclick = () => { clearInterval(minuteur); VUES[b.dataset.vue](); });
-  window.__app = { accueil, CARTES_ECR, IDS_ECR, modeJeu, etat: () => etat, recharger: () => { projection = null; charger(); appliquerTheme(); accueil(); }, CARTES, ALIAS, maitrise, info, cartesActives, N5_DU_N4, OBJECTIFS, DES_MOTS, PROPRES,
+  window.__app = { accueil, IDS_CLES, CLES, CARTES_ECR, IDS_ECR, modeJeu, etat: () => etat, recharger: () => { projection = null; charger(); appliquerTheme(); accueil(); }, CARTES, ALIAS, maitrise, info, cartesActives, N5_DU_N4, OBJECTIFS, DES_MOTS, PROPRES,
     projection: () => projection };   // tests
   accueil();
   // ---------- mises à jour : la nouvelle version s'installe en fond, l'utilisateur redémarre quand il veut ----------

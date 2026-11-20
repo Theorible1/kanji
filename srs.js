@@ -97,9 +97,18 @@ function placer(etat, id, rang, maintenant, juste) {
   noter(etat, [maintenant, id, juste === undefined ? 1 : (juste ? 1 : 0), 0, rang]);
 }
 
-// réponse à une carte déjà vue : +1 rang si juste, -1 sinon ; une erreur qui laisse au rang 1 fait revenir 3 h plus tard
-function appliquer(t, juste, maintenant) {
-  t.rang = juste ? Math.min(SRS.ACQUIS, t.rang + 1) : Math.max(1, t.rang - 1);
+// réponse à une carte déjà vue : pas selon le genre (voir PAS) ; une erreur qui laisse au rang 1 fait revenir 3 h plus tard
+// Carte redescendue par inactivité (t.haut = rang d'avant la 1re descente) : c'est un test de retour, pas une révision ordinaire.
+// Réussie : elle remonte à son rang d'avant (sans +1). Ratée : elle garde le rang où l'inactivité l'a amenée (pas de -1 en plus).
+// Pas de montée / descente selon le genre de carte (v21) : clé +2 / -1, kanji +1 / -1, mot +1 / -2 sur erreur.
+// L'inactivité fait toujours descendre de 1 en 1 (voir appliquerRetards).
+const PAS = { c: [2, 1], k: [1, 1], m: [1, 2] };
+const pasDe = (id) => PAS[(id || "k")[0]] || PAS.k;
+function appliquer(t, juste, maintenant, id) {
+  const [monte, descend] = pasDe(id);
+  if (t.haut) t.rang = juste ? Math.max(t.rang, t.haut) : t.rang;
+  else t.rang = juste ? Math.min(SRS.ACQUIS, t.rang + monte) : Math.max(1, t.rang - descend);
+  delete t.haut;
   t.base = maintenant;
   delete t.retard; delete t.delai; delete t.court;
   if (!juste && t.rang === 1) t.court = true;
@@ -107,7 +116,7 @@ function appliquer(t, juste, maintenant) {
 }
 function repondre(etat, id, juste, maintenant) {
   const t = etat.tuiles[id], avant = t.rang;
-  appliquer(t, juste, maintenant);
+  appliquer(t, juste, maintenant, id);
   // carte qui ne décolle pas : 3 erreurs de suite au rang 1 -> mise de côté, elle revient quand il n'y a plus rien d'autre
   if (avant === 1 && !juste) {
     t.echecs = (t.echecs || 0) + 1;
@@ -131,6 +140,7 @@ function appliquerRetards(etat, maintenant) {
     if (t.pause || t.rang < 2 || t.rang >= SRS.ACQUIS) continue;
     let f = fenetre(t), touche = false;
     while (t.rang > 1 && maintenant >= f.limite) {
+      if (!t.haut) t.haut = t.rang;                 // rang d'avant l'inactivité, rendu si le test de retour est réussi
       t.rang -= 1; t.base = f.limite; t.retard = true; delete t.delai; delete t.court;
       touche = true; f = fenetre(t);
     }
@@ -211,14 +221,18 @@ function reprendre(etat, ids, maintenant) {
 // ---------- nouvelles cartes : kanji seuls, puis mots « combo », puis mots « mixtes » ----------
 // cartes : liste ordonnée de { id, phase, prerequis } ; prerequis = groupes d'ids de cartes,
 // chaque groupe est rempli quand au moins une de ses cartes est au rang 5 ou plus
+// carte.seuil (v21, cartes de clés) : rang demandé à la place du rang 5
 function debloquee(etat, carte) {
-  return carte.prerequis.every((g) => g.some((id) => rangDe(etat, id) >= SRS.DEBLOCAGE));
+  const s = carte.seuil || SRS.DEBLOCAGE;
+  return carte.prerequis.every((g) => g.some((id) => rangDe(etat, id) >= s));
 }
 function prochaineNouvelle(etat, cartes) {
-  for (const phase of ["kanji", "combo", "mixte", "ecriture"]) {
+  // v21 : les cartes « cle » (apprentissage des clés) sont mêlées aux kanji, dans l'ordre de la liste
+  for (const groupe of [["kanji", "cle"], ["combo"], ["mixte"], ["ecriture"]]) {
+    const phase = groupe[0];
     let attente = 0, prete = null;
     for (const c of cartes) {
-      if (c.phase !== phase || etat.tuiles[c.id]) continue;
+      if (!groupe.includes(c.phase) || etat.tuiles[c.id]) continue;
       attente++;
       if (!prete && debloquee(etat, c)) { prete = c; break; }
     }
@@ -317,7 +331,7 @@ function cartesDuJour(etat, maintenant) { return cartesParJour(etat)[cleJour(mai
 function couts(etat) {
   const taux = { 0: tauxReussite(etat) }, sec = {};
   for (let r = 1; r <= 10; r++) taux[r] = tauxParRang(etat, r);
-  for (const ty of ["ks", "kl", "ms", "ml", "me"]) sec[ty] = secondesParType(etat, ty);
+  for (const ty of ["ks", "kl", "ms", "ml", "me", "cs"]) sec[ty] = secondesParType(etat, ty);
   return (id, rang) => (sec[typeCarte(id)] || sec.ks) * (2 - (taux[rang] !== undefined ? taux[rang] : taux[0]));
 }
 // travail que la prochaine carte devrait demander : sert à prévoir sur quelle carte l'objectif du jour sera atteint
@@ -398,13 +412,13 @@ function projeter(etat, cartes, maintenant, opts = {}) {
   for (const [id, t] of Object.entries(etat.tuiles)) { e.tuiles[id] = Object.assign({}, t); delete e.tuiles[id].loin; }
   const taux = {}, sec = {};
   for (let r = 1; r <= 10; r++) taux[r] = opts.taux !== undefined ? opts.taux : tauxParRang(etat, r);
-  for (const ty of ["ks", "kl", "ms", "ml", "me"]) sec[ty] = opts.secondes || secondesParType(etat, ty);
+  for (const ty of ["ks", "kl", "ms", "ml", "me", "cs"]) sec[ty] = opts.secondes || secondesParType(etat, ty);
   // rang de départ des nouvelles cartes : comme les 100 dernières découvertes ; sinon ratée -> 1, réussie -> 2
   const departs = etat.journal.filter((x) => x[3] === 0).slice(-100).map((x) => x[4]);
   const tauxNouv = opts.taux !== undefined ? opts.taux : tauxReussite(etat);
   const depart = () => (departs.length >= 10 ? departs[Math.floor(alea() * departs.length)] : (alea() < tauxNouv ? 2 : 1));
   const reste = { kanji: [], combo: [], mixte: [], ecriture: [] };
-  for (const c of cartes) if (!e.tuiles[c.id]) reste[c.phase].push(c);
+  for (const c of cartes) if (!e.tuiles[c.id]) reste[c.phase === "cle" ? "kanji" : c.phase].push(c);   // les clés se jouent avec les kanji
   // comme dans l'appli : la lecture (kanji, mots) et l'écriture sont deux files séparées ; « deux » les alterne tant que les deux ont une carte débloquée
   const mode = opts.mode || "deux", garde = (id) => mode === "deux" || (mode === "ecriture") === id.endsWith(":ecriture");
   let alt = 0;
@@ -433,7 +447,7 @@ function projeter(etat, cartes, maintenant, opts = {}) {
       const cout = sec[typeCarte(id)];
       if (temps + cout > budget) break;
       const tu = e.tuiles[id], juste = alea() < taux[tu.rang];
-      appliquer(tu, juste, t);
+      appliquer(tu, juste, t, id);
       temps += juste ? cout : 2 * cout;                      // une erreur coûte un rattrapage dans la séance
     }
     for (;;) {
@@ -531,6 +545,12 @@ function qcmSensTexte(bonne, candidats, interdits, alea = Math.random) {
 // carte de sens n° i d'un kanji : on écarte tous les sens connus du kanji (ses autres cartes comprises)
 function qcmSens(fiche, i, toutesFiches, alea = Math.random) {
   return qcmSensTexte(fiche.sensCartes[i], toutesFiches.filter((f) => f.kanji !== fiche.kanji).flatMap((f) => f.sensCartes), fiche.interdits, alea);
+}
+// sens d'une clé (v21) : les autres clés fournissent les pièges ; un piège qui reprend un morceau du bon sens est écarté,
+// et les clés voisines (même idée, autre forme : 刂 / 刀, 彳 / 夂…, colonne « voisins » de cles.csv) ne sont jamais proposées
+function qcmCle(cle, toutesCles, alea = Math.random) {
+  const voisine = (c) => (cle.voisins || []).includes(c.cle) || (c.voisins || []).includes(cle.cle);
+  return qcmSensTexte(cle.sens, toutesCles.filter((c) => c.cle !== cle.cle && !voisine(c)).map((c) => c.sens), [], alea);
 }
 // sens d'un mot : de préférence des mots du même type (nom, verbe…) ; si le mot est un kanji seul, ses sens sont écartés
 function qcmSensMot(mot, tousMots, parKanji, alea = Math.random) {
@@ -636,5 +656,5 @@ const SRSLib = { SRS, H, J, nomRang, cleJour, debutJour, plusJours, marges, fene
   repondreAcquis, appliquerRetards, aJouer, aAvancer, prochaineOuverture, pauser, reprendre, debloquee, prochaineNouvelle,
   typeCarte, enregistrerReponse, ajouterTemps, tempsJour, tauxReussite, tauxParRang, secondesParCarte, secondesParType, estimation, tempsActif,
   tendance, tempsTenu, tempsHabituel, cartesParJour, cartesDuJour, effortParJour, effortDuJour, coutCarte, calculerObjectif, objectifDuJour, prochaineLointaine, ramener, objectifs, ligneHistorique, regler, noterHistorique, projeter, melanger, decoupe, affichageLecture, reponseLecture, pieges, filtreSens,
-  qcmLecture, qcmSens, qcmSensMot, qcmLectureMot, qcmEcriture };
+  qcmLecture, qcmSens, qcmCle, qcmSensMot, qcmLectureMot, qcmEcriture };
 if (typeof window !== "undefined") window.SRSLib = SRSLib;
